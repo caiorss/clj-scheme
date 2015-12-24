@@ -1,0 +1,266 @@
+#+TITLE:  CljScheme
+#+AUTHOR: Caio Rodrigues Soares Silva
+#+EMAIL:  caiorss.rodrigues@gmail.com
+
+ - http://permalink.gmane.org/gmane.lisp.scheme.gambit
+
+* CljScheme
+
+** Overview
+
+*Description*: Implement Clojure functionality and features on top of
+Gambit Scheme.
+
+*Motivation*: Clojure Syntax and macros are what a modern Lisp syntax
+should be: flexible, readable and powerful. Despite the JVM be
+powerful and Clojure runs on top of it, the JVM based languages are
+not suitable to create scripts and interface native code and OS
+api. This project aims to implement a Clojure-like scheme on top of
+Gambit Scheme which has the following features: Commong Lisp Style
+macros, define-macro and a powerful FFI (Foreign Function Interface).
+
+* TODO Tasks
+
+ - [] Implement Vector literal using reader-macro
+ - [] Implement Hash Map Literal using reader-macro
+ - [] Learn How to use the FFI (Foreign Function Interface)
+ - [] Implement Pattern Matching Macros
+ - [] Clojure Macros
+   - [] Thread-first macro
+   - [] Thread-last macro
+   - [] Data flow macro with $
+ - [] Implement Clojure Abstraction
+
+* Files
+** Core.scm
+
+ * file:core.scm Core Definitions and Macros
+
+ See:
+ -
+
+*** Macros:
+**** Dotimes
+
+#+BEGIN_SRC scheme
+
+> (dotimes n 5 (println n))
+0
+1
+2
+3
+4
+
+#+END_SRC
+
+**** Dolist
+
+#+BEGIN_SRC scheme
+
+> (dolist x (list 1 2 3 4 5) (println x))
+1
+2
+3
+4
+5
+>
+
+> (dolist f (directory-files "/") (println f))
+lost+found
+initrd.img
+bin
+cdrom
+initrd.img.old
+root
+opt
+vmlinuz.old
+lib
+mnt
+local.cfg
+run
+...
+
+#+END_SRC
+
+**** Bind Form
+
+Pattern Matching Macro
+
+#+BEGIN_SRC scheme
+
+
+(define-macro (bind-form form param  sepxp)
+  (cond
+   ((pair? form)  `(let*
+                       (
+                        ($ ,param)
+                        (,(car form) (car $))
+                        (,(cdr form) (cdr $))
+                        )
+                     ,sepxp
+                     ))
+
+   ))
+   ;; End of bind-form
+
+>
+(map
+ (fn (p) (bind-form (x . y) p (+ x y)))
+ '((1 . 2) (3 . 4) (6 . 8) (10 . 5))
+)
+(3 7 14 15)
+>
+
+(defn my-map (f xs)
+  (if (empty? xs)
+      '()
+      (bind-form (hd . tl) xs
+                 (cons (f hd) (my-map f tl))
+                 )))
+
+> (my-map inc '(1  2 3 4 5 6))
+(2 3 4 5 6 7)
+
+
+#+END_SRC
+
+*** Clojure Special Forms
+**** Clojure let
+
+#+BEGIN_SRC scheme
+
+> (letc
+   (a 10
+    b (+ a 10)
+    c (* a b)
+    )
+   (+ a b c))
+230
+>
+
+#+END_SRC
+
+** ffi-tools.scm
+
+#+BEGIN_SRC scheme
+
+(include "ffi-tools.scm")
+
+(define add-test
+  (c-lambda
+   (int int)
+   int
+   "
+   ___result = ___arg1 + ___arg2;
+   "
+   ))
+
+;;(c-declare "#include <stdlib.h>")
+;;
+(def-Cfunc cbrt
+            "cbrt"
+            (double)
+            double
+            )
+
+;;;  int gethostname(char *name, size_t len);
+(def-Cfunc gethostname
+            "gethostname"
+            ((pointer char #f) unsigned-int)
+            int
+            )
+
+(define (get-hostname2)
+  (with-malloc (s 64)
+               (gethostname s 64)
+               (ptr->string s)
+               ))
+
+(def-Cfunc cbrt
+            "cbrt"
+            (double)
+            double
+            )
+#+END_SRC
+
+* Gambit Scheme
+
+ Cases:
+
+ - [[http://www.slideshare.net/jlongster/the-scheme-language-using-it-on-the-iphone][The Scheme Language -- Using it on the iPhone]]
+ - [[https://itunes.apple.com/us/app/gambit-repl/id434534076?mt=8&ls=1][Gambit REPL on the App Store]] (Mark Feeley)
+ - [[https://code.google.com/p/win-control/][win-control - OLE, Internet Explorer and raw windows automation library for Gambit-C on Windows platforms. - Google Project Hosting]]
+
+ - [[http://phildawes.net/blog/2007/04/21/gambit-c-namespaces/][Gambit-C namespaces]]
+
+ - [[http://soft.vub.ac.be/Publications/2011/vub-soft-tr-11-20.pdf][]]
+
+ - [[http://www.animal-machine.com/blog/121226_calling_Gambit_Scheme_code_from_c.md][ANIMAL-MACHINE.COM]]
+
+ - [[https://news.ycombinator.com/item?id=2331693][Using Gambit-C Scheme to Create Small, Efficient Native
+   Applications | Hacker News]]
+
+ - http://www.iro.umontreal.ca/~gambit/doc/gambit.pdf
+
+ - [[https://github.com/euccastro/gambit-ffi-types][euccastro/gambit-ffi-types · GitHub]]
+
+  - https://github.com/euccastro/gambit-SDL2/blob/master/ffi-macro.scm
+
+Threads
+
+ - [[http://webmail.iro.umontreal.ca/pipermail/gambit-list/2013-April/006654.html][gambit-list FFI C struct]]
+
+
+** Infix Notation
+
+#+BEGIN_SRC scheme
+
+1>
+> (define x \1+2+3+4+5;)
+> x
+15
+> (display \expt( 2, sqrt(x+1) );)
+16>
+
+\ for (int i=0; i<10; i++) \pretty-print([i,i*i,i*i*i]);
+(0 0 0)
+(1 1 1)
+(2 4 8)
+(3 9 27)
+(4 16 64)
+(5 25 125)
+(6 36 216)
+(7 49 343)
+(8 64 512)
+(9 81 729)
+>
+
+
+#+END_SRC
+** REPL
+
+#+BEGIN_SRC
+
+> ,?
+,? or ,h      : Summary of comma commands
+,q            : Terminate the process
+,qt           : Terminate the current thread
+,t            : Jump to toplevel REPL
+,d            : Jump to enclosing REPL
+,c and ,(c X) : Continue the computation with stepping off
+,s and ,(s X) : Continue the computation with stepping on (step)
+,l and ,(l X) : Continue the computation with stepping on (leap)
+,<n>          : Move to particular frame (<n> >= 0)
+,+ and ,-     : Move to next or previous frame of continuation
+,y            : Display one-line summary of current frame
+,b            : Display summary of continuation (i.e. backtrace)
+,i            : Display procedure attached to current frame
+,e or ,(e X)  : Display environment of current frame or X (a proc or cont)
+,(v X)        : Start a REPL visiting X (a procedure or continuation)
+>
+
+
+#+END_SRC
+
+
+** Additional special forms and procedures
