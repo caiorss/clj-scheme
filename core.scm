@@ -186,19 +186,48 @@
   (__filter f xs '()))
 
 
-;; (define (map-index f . xs)
-;;   (reduce
-;;    (lambda (acc x)
-;;      (let*
-;;          ((elem  (car acc))
-;;           (num   (car elem))          
-;;           )
-;;        (cons (apply f (+ 1 num) x) acc)
-;;        ))
-;;    xs
-;;    '()
-;;    )
-;;   )
+;;
+;; Oly returns true if all arguments are true 
+;;
+(define (all . args)
+  (reduce (lambda (acc x) (and acc x)) args true))
+
+(define (any . args)
+  (reduce (lambda (acc x) (or acc x)) args false))
+
+(define (for-all pred xs)
+  (apply all (map pred xs)))
+
+(define (for-any pred xs)
+  (apply any (map pred xs)))
+
+
+
+(define (__map-index-m f xs acc index)
+  (if (for-all null? xs)
+      (reverse acc)
+
+      (__map-index-m
+       f
+       (map cdr xs)
+       (cons    (apply f index (map car xs)) acc)
+       (+ 1 index))))
+
+
+(define (map-index f . xs)
+  (__map-index-m f xs '() 0 ))
+
+
+(comment (define (map-index f xs acc index)
+    (if (null? xs)
+        (reverse acc)
+
+        (map-index
+         f
+         (cdr xs)
+         (cons    (f index (car xs)) acc)
+         (+ 1 index)))))
+
 
 (define (zipv . xss)
   (apply map vector xss))
@@ -221,6 +250,63 @@
 (define-macro (fn params body)
   `(lambda ,params ,body))
 
+(define-macro
+  (bind-values bindings value-list . body)
+
+  (letrec
+      (
+       (sym  (gensym))
+
+       (map-index (lambda (f . xs)
+                    (__map-index-m f xs '() 0 )))
+
+
+       (__map-index-m (lambda (f xs acc index)
+                        (if (for-all null? xs)
+                            (reverse acc)
+
+                            (__map-index-m
+                             f
+                             (map cdr xs)
+                             (cons    (apply f index (map car xs)) acc)
+                             (+ 1 index)))))
+       
+       )
+      
+      `(let*
+           (
+             (,sym ,value-list)
+            
+            ,@(map-index
+               (lambda (n b)
+                 `(,b (list-ref ,sym ,n))
+                 
+                 )
+               bindings
+               )
+               
+            )
+         
+         ,@body
+         )))
+
+(define-macro (bind-cons pair form . body)
+  (let
+      ((sym1 (car pair))
+       (sym2 (cdr pair))
+       (s    (gensym))
+       )
+
+    `(let*
+         
+         (
+          (,s     ,form)
+          (,sym1 (car ,s))
+          (,sym2 (cdr ,s))
+          )
+       
+          ,@body
+         )))
 
 (define (plist->assoc plist)
   (if (null? plist)
@@ -338,6 +424,23 @@
        ,sym
        )
     ))
+
+
+(define-macro (doto obj . s-exps)
+  (let
+      ((sym (gensym)))
+
+    `(let
+         ((,sym ,obj))
+       
+         (begin
+           ,@(map (lambda (s)
+                    `(,(car s) ,sym ,@(cdr s)))
+                  s-exps
+                  )
+           ,sym
+           ))))
+
 
 (define-macro (bind-form form param  sepxp)
   (cond

@@ -29,6 +29,24 @@
                    " * ) ___arg1 ;")
                  ))
 
+
+
+(define-macro (def-ptr-setter name type)
+  `(def-Cfunc-code ,name
+                  ((pointer ,type #f) ,type)
+                  void
+                  "* ___arg1 = ___arg2 ;"
+                  ))
+
+(define-macro (def-ptr-getter name type)
+  `(def-Cfunc-code ,name
+                 ((pointer ,type #f))
+                 ,type
+                 "___result = * ___arg1 ;"
+                 ))
+
+
+
 (define-macro (c-sizeof c-type )
   `((c-lambda
      ()  unsigned-int
@@ -38,6 +56,8 @@
                          c-type
                          ) " );"
                            ))))
+
+
 
 ;; Null pointer 
 ;;
@@ -54,11 +74,23 @@
 (c-include "<unistd.h>")
 (c-include "<time.h>")
 
-(def-void-ptr-cast pointer-void->int int)
-(def-void-ptr-cast pointer-void->char char)
-(def-void-ptr-cast pointer-void->double double)
-(def-void-ptr-cast pointer-void->float float)
-(def-void-ptr-cast pointer-void->time_t time_t)
+(def-void-ptr-cast ptr-void->int int)
+(def-void-ptr-cast ptr-void->char char)
+(def-void-ptr-cast ptr-void->double double)
+(def-void-ptr-cast ptr-void->float float)
+(def-void-ptr-cast ptr-void->time_t time_t)
+
+
+(def-ptr-getter ptr-int-get int)
+(def-ptr-getter ptr-double-get double)
+(def-ptr-getter ptr-float-get float)
+(def-ptr-getter ptr-time_t-get time_t)
+
+(def-ptr-setter ptr-int-set int)
+(def-ptr-setter ptr-double-set double)
+(def-ptr-setter ptr-float-set  float)
+(def-ptr-setter ptr-time_t-set time_t)
+
 
 (define size-of-ctypes
   `(
@@ -80,8 +112,8 @@
         #f
         )))
 
-(define malloc (c-lambda (int) (pointer void) "malloc"))
-(define free (c-lambda ((pointer void)) void "free"))
+(define malloc (c-lambda (int) (pointer void #f) "malloc"))
+(define free (c-lambda ((pointer void #f)) void "free"))
 
 (define (make-memory bytes)
   (let ((mem (malloc bytes)))
@@ -123,6 +155,33 @@
                       )))
 
 
+(define-macro (def-Cstruct-field-setter
+               struct
+               field
+               type 
+               )
+  (let* (
+         (struct-name (symbol->string struct))
+         (field-name  (symbol->string field))
+
+         (setter      (string->symbol
+                       (string-append
+                         struct-name
+                         "->"
+                         field-name
+                         "!"
+                         )))
+         )
+      
+    `(def-Cfunc-code ,setter
+      ((pointer (struct ,struct-name)) ,type)
+       void
+       ,(string-append
+         "___arg1->" field-name  " = ___arg2 ;")
+      )))
+
+
+
 (define-macro (def-Cstruct struct . field-return-values)
     
   (let*
@@ -156,15 +215,20 @@
                           (lambda (c)
                             (make-accessor-name struct (car c)))
                           field-return-values
-                          ))
-       
-       )
+                          )))
 
    `(begin
       ,@(map
          (lambda (c) `(def-Cstruct-field ,struct ,(car c) ,(cadr c)))
          field-return-values
          )
+
+      (begin
+         ,@(map
+            (lambda (c) `(def-Cstruct-field-setter
+                           ,struct ,(car c) ,(cadr c)))
+            field-return-values           
+            ))
 
       (define (,destructor-name st)
         (list ,@(map

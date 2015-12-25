@@ -4,6 +4,16 @@
 
  - http://permalink.gmane.org/gmane.lisp.scheme.gambit
 
+ - [[http://www.cs.brandeis.edu/~zkessin/thesis.pdf][]]
+
+ - [[http://www.willdonnelly.net/blog/runtime-scheme-detection/][Runtime Scheme Detection]]
+
+ - [[http://jlongster.com/Open-Sourcing-My-Gambit-Scheme-iOS-Game-from-2010][Open-Sourcing My Gambit Scheme iOS Game from 2010]]
+
+ - [[http://synthcode.com/scheme/irregex/][IrRegular Expressions]]
+
+ - [[https://pragmattica.wordpress.com/category/scheme/][Scheme | Pragmattica]]
+   
 * CljScheme 
 
 ** Overview
@@ -32,6 +42,7 @@ macros, define-macro and a powerful FFI (Foreign Function Interface).
  - [] Implement Clojure Abstraction 
 
 * Files 
+
 ** Core.scm 
 
  * file:core.scm Core Definitions and Macros
@@ -176,6 +187,16 @@ Pattern Matching Macro
                (ptr->string s)
                ))
 
+(def-Cfunc-code  get-hostname
+                  () 
+                  char-string
+                  "
+                  char hostname [64];
+                  gethostname(hostname, 64);
+                  ___result = hostname ;
+                  "
+                  )
+
 (def-Cfunc cbrt
             "cbrt"
             (double)
@@ -265,3 +286,28 @@ Threads
 
 ** Additional special forms and procedures
 
+** Note 
+
+ - http://stackoverflow.com/questions/29913654/gambit-c-scheme-cannot-load-a-windows-dll
+ 
+#+BEGIN_SRC 
+
+I'm having troubles with dynamically loading a windows shared library with Gambit-C Scheme.
+
+(c-declare "#include <stdlib.h>")
+(c-declare "#include <Windows.h>")
+(define load-library (c-lambda () void "
+    HINSTANCE lib = LoadLibrary (\"test.dll\");
+    if (lib) printf (\"works!\");
+"))
+(load-library)
+Directory structure:
+
+--test.scm
+--test.dll
+GSC commands:
+
+gsc -exe test.scm
+I've tested it in pure compiled C and it loads there. Thank you.
+
+#+END_SRC
