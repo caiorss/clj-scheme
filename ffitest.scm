@@ -1,3 +1,4 @@
+;(include "utils.scm")
 (include "core.scm")
 (include "ffi-tools.scm")
 
@@ -58,14 +59,26 @@
               )
 
 
+(define (test-struct)
+  (tm-fields-tags
+   (doto (tm-new)
+         (tm->tm_sec! 0)
+         (tm->tm_min! 0)
+         (tm->tm_hour! 0)
 
-(tm-fields-tags
- (doto (tm-make)
-       (tm->tm_year! 100)
-       (tm->tm_mday! 0)
-       (tm->tm_hour! 0)
-       (tm->tm_mday! 0)
-       ))
+         (tm->tm_year! 100)
+         (tm->tm_mday! 0)
+         (tm->tm_mon! 3)
+         )))
+
+
+(def-Cfunc-code tm-new
+                ()
+                (pointer (struct "tm"))
+
+                "
+                ___result_voidstar = malloc (sizeof (struct tm)) ;
+                ")
 
 (define (tm-make tm fields)
   (bind-values
@@ -87,13 +100,7 @@
         )
    ))
 
-(def-Cfunc-code tm-new
-                ()
-                (pointer (struct "tm"))
 
-                "
-                ___result_voidstar = malloc (sizeof (struct tm)) ;
-                ")
 
 ;; (def-Cfunc-code tm->tm_year!
 ;;   ((pointer (struct "tm")) int)
