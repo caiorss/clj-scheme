@@ -4,6 +4,14 @@
   )
 
 
+
+(define-macro (inc! x)
+  `(set! ,x (+ ,x 1)))
+
+(define-macro (dec! x)
+  `(set! ,x (- ,x 1)))
+
+
 (define-macro (dotimes var value body)
   `(letrec
        ((loop
@@ -170,9 +178,10 @@ Expected output: 15.0
   72
 
   > (map
-      (lambda (pair) (bind-cons (h . t) pair (* h t)))
-      '((1 . 2) (3 . 4) (5 . 6))
-    )
+      (lambda (pair)
+            (bind-cons (h . t) pair (* h t)))
+      '((1 . 2) (3 . 4) (5 . 6)))
+
 
    (2 12 30)
    >
@@ -195,6 +204,23 @@ Expected output: 15.0
           ,@body
          )))
 
+
+(define-macro ($thunk func . args )
+   " Thunk Macro, turns the s-expression into a thunk:
+
+     Example:
+
+    > (define t ($thunk display 10))
+    > t
+    #<procedure #3 t>
+    > (t)
+   10>
+
+   This macro will expand to:
+
+   ($thunk display 10)) -> (lambda () (display 10))
+   "
+  `(lambda () (,func ,@args)))
 
 (define nil 'nil)
 (define true #t)
@@ -694,9 +720,12 @@ Example:
   "
   (cond
 
+   ((and (list? s) (null? s))   "()")
    ((string? s) (string-append "\"" s "\""))
    ((number? s) (number->string s))
    ((symbol? s) (symbol->string s))
+
+   ((keyword? s) (string-append (keyword->string s) ":"))
    ((list? s)   (string-append "(" (string/join " "
                                                 (map str s)) ")"))
    ((pair? s)   (string-append "(" (str (car s)) " . " (str (cdr s))  ")"))
@@ -735,3 +764,82 @@ Example:
        ,result ;;; Return value
 
        )))
+
+
+ ;; Enf of (match <expression> . <patterns>)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (run-op operation)
+  (match operation
+         (()       0)
+         ((a b)    (+ a b))
+         ((a b c)  (* a b c))
+         ))
+
+
+(define (list-match? s1 s2)
+  (and
+   (and (list? s1)  (list? s2))
+   (= (length s1) (length s2))
+   ))
+
+(define (map2 f xs)
+  (match xs
+         ((hd . tl)    (cons (f hd ) (map2 f tl)))
+         (()          '())
+   ))
+
+(map2 inc (list 1 2 3 4 5 ))
+
+(define (run op a b)
+  (match op
+         (add  (+ a b))
+         (sub  (- a b))
+         (mul  (* a b))
+         (div  (/ a b))
+
+         (add: (+ a b))
+         (sub: (- a b))
+
+         ))
+
+(run  add: 10 20)
+(run 'mul  20 30)
+
+
+
+
+(define-macro (test x)
+  `(quote ,x)
+  )
+
+(comment
+
+ "Dream Pattern Matching "
+
+ (defn map2 (f xs)
+   (match xs
+          (hd . tl)  '(cons (f hd) (map2 f tl))
+          ()         '()
+          ))
+
+ (match form
+
+        ()          (error "Cannot be empty")
+        (x: x y:)   (list x y)
+        (add: x y)  (+ x y)
+        (a b c d)   (+ a b c d)
+
+        ("--command1" x1 x2 x3)  dosemething
+
+        ("--command2" . args)
+
+        "--command3"
+
+        )
+
+ )
