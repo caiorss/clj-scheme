@@ -2,6 +2,8 @@
 #+AUTHOR: Caio Rodrigues Soares Silva
 #+EMAIL:  caiorss.rodrigues@gmail.com 
 
+ - [[http://www.devx.com/opensource/Article/42778/0/page/2][Using Gambit-C Scheme to Create Small, Efficient Native Applications : Page 2]]
+
  - http://permalink.gmane.org/gmane.lisp.scheme.gambit
 
  - [[http://www.cs.brandeis.edu/~zkessin/thesis.pdf][]]
@@ -13,7 +15,10 @@
  - [[http://synthcode.com/scheme/irregex/][IrRegular Expressions]]
 
  - [[https://pragmattica.wordpress.com/category/scheme/][Scheme | Pragmattica]]
-   
+
+ - http://blog.gmane.org/gmane.lisp.scheme.gambit
+
+
 * CljScheme 
 
 ** Overview
@@ -311,3 +316,109 @@ gsc -exe test.scm
 I've tested it in pure compiled C and it loads there. Thank you.
 
 #+END_SRC
+* Projects 
+
+
+Black Hole is an R5RS compatible module system for Gambit which allows
+you to easily import libraries into your code including macros, which
+previously has been tricky on Gambit. Conversely you can also export
+your own code and create your own libraries to fully modularise your
+development.
+
+ - https://github.com/pereckerdal/blackhole
+
+ - 
+
+
+JazzScheme is a development system based on extending the Scheme
+programming language and the Gambit system. It includes a module
+system, hygienic macros, object-oriented programming, a full featured
+cross-platform application framework, a sophisticated programmable IDE
+and a build system that creates binaries that run on Mac OS X, Windows
+and L… http://www.jazzscheme.org/
+
+
+  https://github.com/jazzscheme/jazz
+
+
+LambdaNative is a cross-platform development environment written in
+Scheme, supporting Android, iOS, BlackBerry 10, OS X, Linux, Windows,
+OpenBSD, NetBSD and OpenWrt. http://www.lambdanative.org
+
+
+  https://github.com/part-cw/lambdanative
+
+
+*netguy204/gambit-game-lib*
+
+ Game library that exploits Gamit-C
+ http://www.50ply.com/blog/2012/08/29/spriter-scml-parser-in-scheme/
+
+ https://github.com/netguy204/gambit-game-lib
+
+*win-control*
+
+OLE, Internet Explorer and raw windows automation library for Gambit-C
+on Windows platforms.
+
+  https://code.google.com/p/win-control/
+
+
+
+I used Gambit Scheme to build my iOS game Cloud Breaker. Here are the
+steps you can take to get Gambit up and running on your iPhone or
+iPad. I assume you have the latest version of Xcode installed (I have
+Xcode 5.1.1).
+
+[[http://asivitz.com/posts/running_gambit_scheme_on_ios][Running Gambit Scheme on iOS
+
+]]
+*euccastro/gambit-SDL2*
+
+SDL2 bindings for Gambit C
+
+ https://github.com/euccastro/gambit-SDL2
+   
+
+*gambit-ffi-types*
+
+This library provides Scheme-friendly management of C structs, unions,
+and memory allocated opaque types. For conciseness, we'll refer to all
+of these as 'structs' in this text.
+
+C structs are accessed and modified in place. Only primitives
+(integers, strings, etc.) are copied when converting from Scheme to C
+and back. So, for example, you can pass such a struct to a C function
+that modifies its argument in place, and any changes will be reflected
+when you next access the fields in that struct after the call returns.
+
+The library takes care to maintain the lifecycle of your objects in a
+schemey way: they will be kept around only as long as you have
+references to them (or to some field of them, or to some subfield of a
+field of them, etc.)
+
+ https://github.com/euccastro/gambit-ffi-types
+
+
+*mbenelli/klio*
+
+A collection of scheme tools and libraries for gambit scheme.
+
+Klio is a collection of standard scheme libraries gathered from the net. These libraries has been modified and reorganized in order to improve the overall consistency and to take advantage of Gambit's specifics strongs. It particular they fit a static compilation model, in which a single executable is created. If you are looking for Gambit's library, you may find something that better fit your need on Gambit's wiki. The distinctive "features" of klio are:
+
+ - it doesn't use hygienic macros, only gambit's define-macro
+ - it doesn't require installation of any tool, and doesn't try to be portable between implementations.
+
+Klio includes also a web server that is simple but powerful. It's main goals are:
+
+ - portability
+ - reliable ad efficient implementation of HTTP 1.1
+ - integraton with ssax-sxml for dynamic pages
+ - good performance for small sites (few users) with heavy load (pages refreshed periodically)
+
+
+ [[https://github.com/mbenelli/klio][mbenelli/klio · GitHub]]
+
+
+
+

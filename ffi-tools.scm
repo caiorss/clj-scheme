@@ -1,4 +1,15 @@
 
+(define-macro (apply-macros macros exps)
+  `(begin
+
+     ,@(apply append
+            
+              (map
+               (lambda (e)
+                 (map (lambda (m) `(,m ,e)) macros ))
+               exps
+               ))))
+
 (define-macro (c-include header)
   `(c-declare ,(string-append "#include " header)))
 
@@ -92,7 +103,7 @@
 (def-ptr-setter ptr-time_t-set time_t)
 
 
-(define size-of-ctypes
+(define sizeof-ctypes
   `(
    (int     ,(c-sizeof int))
    (double  ,(c-sizeof double))
@@ -104,9 +115,9 @@
    (size_t  ,(c-sizeof "size_t"))
    ))
 
-(define (size-of type)
+(define (sizeof type)
   (let
-      ((c (assoc type size-of-ctypes)))
+      ((c (assoc type sizeof-ctypes)))
     (if c
         (cadr c)
         #f
@@ -135,6 +146,67 @@
       (free ,var)
       ,out      
       )))
+
+
+(define-macro (make-carray-type-getter type)
+  (let
+      (
+       (name    (string->symbol
+                 (string-append
+                  "carray-"
+                  (symbol->string type)
+                  "-ref"                  
+                  )))
+       )
+
+    `(define ,name 
+      (c-lambda
+       ((pointer ,type #f) int)
+       ,type
+       "___result = ___arg1[___arg2];"))
+    ))
+
+
+(define-macro (make-carray-type-setter type)
+  (let
+      (
+       (name    (string->symbol
+                 (string-append
+                  "carray-"
+                  (symbol->string type)
+                  "-set!"                  
+                  )))
+       )
+
+    `(define ,name 
+      (c-lambda
+       ((pointer ,type #f) int ,type)
+       ,type
+       "___arg1[___arg2] = ___arg3;"
+       ))
+    ))
+
+(define (carray-make len type #!optional (typesize #f) )
+  (apply vector
+         `(c-array:
+           ,type
+           ,len
+           ,(malloc
+             (* len
+                (or typesize (sizeof type)))))))
+
+(apply-macros
+ (make-carray-type-getter
+  make-carray-type-getter
+  )
+ (
+  int
+  unsigned-int8
+  unsigned-int16
+  float
+  double
+  char
+  ))
 
 
 (define-macro (def-Cstruct-field struct field return-type)
