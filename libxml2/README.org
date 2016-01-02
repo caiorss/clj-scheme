@@ -1,0 +1,443 @@
+#+TITLE: Libxml2 
+#+AUTHOR: Caio Rodrigues Soares Silva
+#+DESCRIPTION: Gambit Scheme Wrapper to Library Xml2 
+
+* Lxml 
+
+* Examples 
+
+** Example1 - Converting XML File to S-expression tree
+ 
+*** XML File 
+
+ file:tests/cars.xml 
+
+ #+BEGIN_SRC xml 
+<?xml version="1.0" encoding="UTF-8" ?>
+<cars>
+  <car country="JP">
+    <name>motorcycle</name>
+    <price>150</price>
+    <img file="car1.jpg"/>
+  </car>
+  <car country="US">
+    <name>truck</name>
+    <price>500</price>
+    <img file="car2.jpg"/>
+  </car>
+  <car country="DE">
+    <name>car</name>
+    <price>200</price>
+    <img file="car3.jpg"/>
+  </car>
+</cars> 
+ #+END_SRC
+
+*** Code 
+
+#+BEGIN_SRC scheme 
+
+> (load "lxml")
+"/home/tux/PycharmProjects/cljscheme/libxml2/lxml.o1"
+
+> (def tree (xml/file->tree "tests/cars.xml"))
+
+> tree
+#((tag: "cars")
+  (attr: ())
+  (val: nil)
+  (nodes:
+   (#((tag: "car")
+      (attr: (("country" "JP")))
+      (val: nil)
+      (nodes:
+       (#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+        #((tag: "price") (attr: ()) (val: "150") (nodes: ()))
+        #((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ())))))
+    #((tag: "car")
+      (attr: (("country" "US")))
+      (val: nil)
+      (nodes:
+       (#((tag: "name") (attr: ()) (val: "truck") (nodes: ()))
+        #((tag: "price") (attr: ()) (val: "500") (nodes: ()))
+        #((tag: "img") (attr: (("file" "car2.jpg"))) (val: "") (nodes: ())))))
+    #((tag: "car")
+      (attr: (("country" "DE")))
+      (val: nil)
+      (nodes:
+       (#((tag: "name") (attr: ()) (val: "car") (nodes: ()))
+        #((tag: "price") (attr: ()) (val: "200") (nodes: ()))
+        #((tag: "img")
+          (attr: (("file" "car3.jpg")))
+          (val: "")
+          (nodes: ()))))))))
+
+
+ ;;;;;;;;;;;; Acessors ;;;;;;;;;;;;;
+
+;;; Node Name or tag 
+;;
+> (xml/tree-tag tree)
+"cars"
+> 
+
+;;; Attributes 
+> (xml/tree-attr tree)
+()
+> 
+
+;;;; Value 
+> (xml/tree-val tree)
+nil
+> 
+
+;;;; Nodes 
+
+> (xml/tree-nodes tree)
+
+(#((tag: "car")
+   (attr: (("country" "JP")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "150") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ())))))
+ #((tag: "car")
+   (attr: (("country" "US")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "truck") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "500") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car2.jpg"))) (val: "") (nodes: ())))))
+ #((tag: "car")
+   (attr: (("country" "DE")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "car") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "200") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car3.jpg"))) (val: "") (nodes: ()))))))
+> 
+
+  ;;
+  ;;  Iterating the XML                   ; ;;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;; next - Follow the next node 
+
+> (xml/tree->path tree '[next ])
+(#((tag: "car")
+   (attr: (("country" "JP")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "150") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ())))))
+ #((tag: "car")
+   (attr: (("country" "US")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "truck") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "500") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car2.jpg"))) (val: "") (nodes: ())))))
+ #((tag: "car")
+   (attr: (("country" "DE")))
+   (val: nil)
+   (nodes:
+    (#((tag: "name") (attr: ()) (val: "car") (nodes: ()))
+     #((tag: "price") (attr: ()) (val: "200") (nodes: ()))
+     #((tag: "img") (attr: (("file" "car3.jpg"))) (val: "") (nodes: ()))))))
+> 
+
+
+;;
+;; Get attribute coutnry  
+
+> (xml/tree->path tree '[next  (attr? "country")])
+("JP" "US" "DE")
+> 
+
+;; Select only the first node 
+;;
+> (xml/tree->path tree '[next first ])
+#((tag: "car")
+  (attr: (("country" "JP")))
+  (val: nil)
+  (nodes:
+   (#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+    #((tag: "price") (attr: ()) (val: "150") (nodes: ()))
+    #((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ())))))
+> 
+
+> (xml/tree->path tree '[next first next (tag= "name")])
+
+#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+ 
+
+> (xml/tree->path tree '[next first next (tag= "name") val])
+"motorcycle"
+> 
+
+> (xml/tree->path tree '[next (map next)] )
+((#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+  #((tag: "price") (attr: ()) (val: "150") (nodes: ()))
+  #((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ())))
+ (#((tag: "name") (attr: ()) (val: "truck") (nodes: ()))
+  #((tag: "price") (attr: ()) (val: "500") (nodes: ()))
+  #((tag: "img") (attr: (("file" "car2.jpg"))) (val: "") (nodes: ())))
+ (#((tag: "name") (attr: ()) (val: "car") (nodes: ()))
+  #((tag: "price") (attr: ()) (val: "200") (nodes: ()))
+  #((tag: "img") (attr: (("file" "car3.jpg"))) (val: "") (nodes: ()))))
+> 
+
+> (xml/tree->path tree '[next (map next)  (map tag= "name")]  )
+(#((tag: "name") (attr: ()) (val: "motorcycle") (nodes: ()))
+ #((tag: "name") (attr: ()) (val: "truck") (nodes: ()))
+ #((tag: "name") (attr: ()) (val: "car") (nodes: ())))
+> 
+
+> (xml/tree->path tree '[next (map next)  (map tag= "name") (map val)  ])
+("motorcycle" "truck" "car")
+>
+
+> (xml/tree->path tree '[next (map next)  (map tag= "img") ])
+(#((tag: "img") (attr: (("file" "car1.jpg"))) (val: "") (nodes: ()))
+ #((tag: "img") (attr: (("file" "car2.jpg"))) (val: "") (nodes: ()))
+ #((tag: "img") (attr: (("file" "car3.jpg"))) (val: "") (nodes: ())))
+> 
+
+> (xml/tree->path tree '[next (map next)  (map tag= "img") attrs ])
+((("file" "car1.jpg")) (("file" "car2.jpg")) (("file" "car3.jpg")))
+
+> (xml/tree->path tree '[next (map next)  (map tag= "img") (attr? "file")])
+("car1.jpg" "car2.jpg" "car3.jpg")
+> 
+ 
+
+
+#+END_SRC
+** Example2 - Extract XML Data 
+
+ file:tests/eurofxref-daily.xml
+
+#+BEGIN_SRC scheme 
+
+> (def tree (xml/file->tree "tests/eurofxref-daily.xml"))
+
+>  tree
+#((tag: "Envelope")
+  (attr: ())
+  (val: nil)
+  (nodes:
+   (#((tag: "subject") (attr: ()) (val: "Reference rates") (nodes: ()))
+    #((tag: "Sender")
+      (attr: ())
+      (val: nil)
+      (nodes:
+       (#((tag: "name")
+          (attr: ())
+          (val: "European Central Bank")
+          (nodes: ())))))
+    #((tag: "Cube")
+      (attr: ())
+      (val: nil)
+      (nodes:
+       (#((tag: "Cube")
+          (attr: (("time" "2015-12-31")))
+          (val: nil)
+          (nodes:
+           (#((tag: "Cube")
+              (attr: (("currency" "USD") ("rate" "1.0887")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "JPY") ("rate" "131.07")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "BGN") ("rate" "1.9558")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "CZK") ("rate" "27.023")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "DKK") ("rate" "7.4626")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "GBP") ("rate" "0.73395")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "HUF") ("rate" "315.98")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "PLN") ("rate" "4.2639")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "RON") ("rate" "4.5240")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "SEK") ("rate" "9.1895")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "CHF") ("rate" "1.0835")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "NOK") ("rate" "9.6030")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "HRK") ("rate" "7.6380")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "RUB") ("rate" "80.6736")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "TRY") ("rate" "3.1765")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "AUD") ("rate" "1.4897")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "BRL") ("rate" "4.3117")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "CAD") ("rate" "1.5116")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "CNY") ("rate" "7.0608")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "HKD") ("rate" "8.4376")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "IDR") ("rate" "15039.99")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "ILS") ("rate" "4.2481")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "INR") ("rate" "72.0215")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "KRW") ("rate" "1280.78")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "MXN") ("rate" "18.9145")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "MYR") ("rate" "4.6959")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "NZD") ("rate" "1.5923")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "PHP") ("rate" "50.999")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "SGD") ("rate" "1.5417")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "THB") ("rate" "39.248")))
+              (val: "")
+              (nodes: ()))
+            #((tag: "Cube")
+              (attr: (("currency" "ZAR") ("rate" "16.9530")))
+              (val: "")
+              (nodes: ())))))))))))
+> 
+
+> (xml/tree->path tree '[next  (tag= "Cube") next first next (attr? "currency")])
+("USD"
+ "JPY"
+ "BGN"
+ "CZK"
+ "DKK"
+ "GBP"
+ "HUF"
+ "PLN"
+ "RON"
+ "SEK"
+ "CHF"
+ "NOK"
+ "HRK"
+ "RUB"
+ "TRY"
+ "AUD"
+ "BRL"
+ "CAD"
+ "CNY"
+ "HKD"
+ "IDR"
+ "ILS"
+ "INR"
+ "KRW"
+ "MXN"
+ "MYR"
+ "NZD"
+ "PHP"
+ "SGD"
+ "THB"
+ "ZAR")
+> 
+
+> (xml/tree->path tree '[next  (tag= "Cube") next first next (attr? "rate")])
+("1.0887"
+ "131.07"
+ "1.9558"
+ "27.023"
+ "7.4626"
+ "0.73395"
+ "315.98"
+ "4.2639"
+ "4.5240"
+ "9.1895"
+ "1.0835"
+ "9.6030"
+ "7.6380"
+ "80.6736"
+ "3.1765"
+ "1.4897"
+ "4.3117"
+ "1.5116"
+ "7.0608"
+ "8.4376"
+ "15039.99"
+ "4.2481"
+ "72.0215"
+ "1280.78"
+ "18.9145"
+ "4.6959"
+ "1.5923"
+ "50.999"
+ "1.5417"
+ "39.248"
+ "16.9530")
+> 
+
+
+#+END_SRC

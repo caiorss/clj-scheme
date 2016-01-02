@@ -15,7 +15,7 @@
 ;;  - http://xmlsoft.org/html/libxml-xpath.html
 ;;  - http://xmlsoft.org/APIconstructors.html
 
-(include "ffi-tools.scm")
+;; (include "ffi-tools.scm")
 
 (c-include "<string.h>")
 (c-include "<libxml/tree.h>")
@@ -411,6 +411,8 @@ ___result = ptr->content ;
              ;;; Retrive all attributes
              (attrs  (map (fn [xs] (xml/tree-attr xs)) tree))
 
+             (val   (xml/tree-val tree))
+             
              ((stp val)  (match stp
 
                                 (nth  (list-ref tree val))
@@ -428,7 +430,9 @@ ___result = ptr->content ;
                                 (attr?
                                  (map
 
-                                  (fn [xs] (alist-get (xml/tree-attr xs) val))
+                                  (fn [xs]
+                                      (alist-get
+                                       (xml/tree-attr xs) val))
 
                                   tree
                                   ))
@@ -441,7 +445,30 @@ ___result = ptr->content ;
                                   tree
                                   ))
 
+
+                                (map   (map (fn [t] (xml/tree->step t val)) tree))
+
                                 ))
+
+             ((stp . rem )
+
+              (match stp
+
+                     (map
+                      (map (fn [t]
+                               (xml/tree->step t rem)) tree))
+
+                     ;; (mapc
+
+                     ;;  (reduce
+                     ;;   (fn [t acc] (map xml/tree->step t))
+                     ;;   rem
+                     ;;   tree
+
+                     ;;   ))
+
+
+               ))
 
              )))
 
