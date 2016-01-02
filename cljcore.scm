@@ -1,226 +1,4 @@
 
-(define-macro (comment .  sexp)
-  `(values)
-  )
-
-
-
-(define-macro (inc! x)
-  `(set! ,x (+ ,x 1)))
-
-(define-macro (dec! x)
-  `(set! ,x (- ,x 1)))
-
-
-(define-macro (dotimes var value body)
-  `(letrec
-       ((loop
-         (lambda (,var)
-           (if  (< ,var ,value)
-                (begin
-                  ,body
-                  (loop (+ ,var 1))))
-           )))
-     (loop 0)
-     ))
-
-
-(define-macro (dolist var alist body)
-  `(letrec
-       ((loop (lambda (xs)
-                (if (not  (null? xs))
-                    (let ((,var (car xs)))
-                      (begin
-                        ,body
-                        (loop (cdr xs))
-                        ))
-                    ))))
-     (loop ,alist)
-       ))
-
-
-(define-macro (when cond . sexps)
-  `(if ,cond
-      (begin ,@sexps)
-      ))
-
-(define-macro (unless cond . sexps)
-  `(if (not ,cond)
-      (begin ,@sexps)
-      ))
-
-
-(define-macro (if-not
-               cond
-               f-statement
-               #!optional (t-statement nil))
-
-  (if (nil? t-statement)
-      `(if (not ,cond)
-          ,f-statement
-          )
-      `(if (not ,cond)
-           ,f-statement
-           ,t-statement
-           )
-      ))
-
-
-(define-macro (doto obj . s-exps)
-  (let
-      ((sym (gensym)))
-
-    `(let
-         ((,sym ,obj))
-
-         (begin
-           ,@(map (lambda (s)
-                    `(,(car s) ,sym ,@(cdr s)))
-                  s-exps
-                  )
-           ,sym
-           ))))
-
-(define-macro (-> . s-exps)
-  "
-  Clojure thread first macro
-
-  "
-  (let  ((sym (gensym)))
-
-    `(let*
-
-         (
-          (,sym ,(car s-exps))
-
-         ,@(map
-            (lambda (s) `(,sym (,(car s) ,sym  ,@(cdr s))))
-            (cdr s-exps)
-           )
-
-          )
-       ,sym
-       )
-    )
-  )
-
-(define-macro (->> . s-exps)
-  "
-  Clojure thread last macro
-
-  "
-  (let  ((sym (gensym)))
-
-    `(let*
-
-         (
-          (,sym ,(car s-exps))
-
-         ,@(map
-            (lambda (s) `(,sym (,(car s) ,@(cdr s) ,sym)))
-            (cdr s-exps)
-           )
-
-          )
-       ,sym
-       )
-    )
-  )
-
-(define-macro ($-> s0 . s-exps)
-"
-Example:
-
-($-> 500
-     (/ $ 20)
-     (- 40 $)
-     (expt $ 2)
-     log
-     exp
-     sqrt
-     )
-
-Expansion:
-
-(sqrt
-   (exp
-     (log
-        (expt
-           (- 40 (/ 500 20)) 2))))
-
-Expected output: 15.0
-"
-  `(let*
-
-       (
-        ($  ,s0)
-
-        ,@(map
-           (lambda (s) (if (symbol? s)
-                           `($   (,s $))
-                           `($  ,s))
-                   )
-           s-exps
-           )
-
-        )
-     $
-     )
-  )
-
-(define-macro (bind-cons pair form . body)
-  "
-  Destructure a cons-pair
-
-  Example:
-
-  > (bind-cons (x . y) '(9 . 8) (* x y))
-  72
-
-  > (map
-      (lambda (pair)
-            (bind-cons (h . t) pair (* h t)))
-      '((1 . 2) (3 . 4) (5 . 6)))
-
-
-   (2 12 30)
-   >
-
-  "
-  (let
-      ((sym1 (car pair))
-       (sym2 (cdr pair))
-       (s    (gensym))
-       )
-
-    `(let*
-
-         (
-          (,s     ,form)
-          (,sym1 (car ,s))
-          (,sym2 (cdr ,s))
-          )
-
-          ,@body
-         )))
-
-
-(define-macro ($thunk func . args )
-   " Thunk Macro, turns the s-expression into a thunk:
-
-     Example:
-
-    > (define t ($thunk display 10))
-    > t
-    #<procedure #3 t>
-    > (t)
-   10>
-
-   This macro will expand to:
-
-   ($thunk display 10)) -> (lambda () (display 10))
-   "
-  `(lambda () (,func ,@args)))
 
 (define nil 'nil)
 (define true #t)
@@ -230,7 +8,7 @@ Expected output: 15.0
 (define (true? x) (and x #t))
 
 (define (identity x) x)
-(define (constantly c) (lambda (x) x))
+(define (constantly c) (lambda (x) c))
 
 (define (eof? x)  (equal? x #!eof))
 (define (void? x) (equal? x #!void))
@@ -252,7 +30,11 @@ Expected output: 15.0
    ))
 
 (define (nil? x)
-  (or  (equal? x 'nil)
+  (or
+       (not  x)
+       (equal? x 'nil)
+       (equal? x #!void)
+       (equal? x #!eof)
        (null? x)))
 
 (define (not-nil? x)
@@ -264,11 +46,13 @@ Expected output: 15.0
       (car xs)
       ))
 
+
 (define (second xs)
-  (if (nil? xs)
+  (if (null? xs)
       nil
-      (cdar xs)
-      ))
+      (if (null? (cdr xs))
+          nil
+          (cadr xs))))
 
 (define (rest xs)
   (if (nil? xs)
@@ -353,24 +137,18 @@ Expected output: 15.0
       (list nil (cadr var-err))
       ))
 
-(define (apnil f)
+(define (bind-nil f arg #!optional (val nil))
+  (if (nil? arg)
+      val
+      (f arg)
+   ))
+
+(define (fnil f #!optional (default nil))
   (lambda (arg)
     (if (nil? arg)
-        nil
+        default
         (f arg)
         )))
-
-(define (fnil f arg-list nil-return)
-  (let ((result
-         (if (null? arg-list)
-             nil
-             (apply f arg-list)
-             )))
-    (if (nil? result)
-        nil-return
-        result
-        )))
-
 
 (define (inc x)
   "Increment a number, add 1"
@@ -570,7 +348,7 @@ Expected output: 15.0
 
 
 (define (__map-index-m f xs acc index)
-  (if (for-all null? xs)
+  (if (for-all? null? xs)
       (reverse acc)
 
       (__map-index-m
@@ -623,6 +401,126 @@ Expected output: 15.0
 
 (define (exec-times n f)
   (__exec-times n f 0))
+
+(defn __count-until (f_iter f_cond f_sel x0 acc)
+        (letc
+
+         [out   (f_iter x0)]
+
+         (if (f_cond out)
+             acc
+             (if (f_sel out)
+                 (__count-until f_iter f_cond f_sel  out (+ 1 acc))
+                 (__count-until f_iter f_cond f_sel  out acc)
+                 ))))
+
+(defn count-until  (f_iter f_cond x0 #!optional (f_sel pred-true))
+  (__count-until f_iter f_cond f_sel x0  0))
+
+
+(defn iterate-until (f_iter f_cond x0 )
+  "
+  Example:
+
+   > (iterate-until inc (partial < 10) 0 even?)
+     (1 3 5 7 9)
+
+  > (iterate-until inc (partial < 10) 0 odd?)
+    (0 2 4 6 8)
+  >
+
+  "
+  (begin
+      (defn __iterate-until (x0 acc)
+        (letc
+
+         [ out   ( f_iter x0)]
+
+         (if ( f_cond out)
+             (if ( f_cond x0)
+                 (reverse acc)
+                 (reverse (cons x0 acc))
+                 )
+             (__iterate-until  out (cons x0 acc))
+             )))
+
+      (__iterate-until x0 '())
+    ))
+
+
+(defn iteratep-until (f_iter f_cond f_sel f_proj f_acc x0 acc)
+       "
+        General higher order loop function
+
+         Parameters:
+
+         * f_iter - Iterator function that generates the next element of the sequence.
+         * f_cond - Predicate function that when is true stop the loop and returns
+                    the accumulator
+         * f_sel  - Predicate selector, only the values that satifies f_sel are
+                    accumulated.
+
+         * f_proj  - Function to be applied to each element before be accumulated.
+
+         * x0      - Initial element of the sequence
+
+         * acc     - Initial value of the accumulator
+
+         Example:
+
+        > (iteratep-until  inc  (partial < 10)  pred-true  identity   cons 1 '())
+           (9 8 7 6 5 4 3 2 1)
+        >
+
+       > (iteratep-until  inc  (partial < 10)  pred-true  (partial * 2)   cons 1 '())
+         (18 16 14 12 10 8 6 4 2)
+
+       > (iteratep-until  inc  (partial < 10)  pred-false (partial * 2)   cons 1 '())
+       ()
+
+       > (iteratep-until  inc  (partial < 10)  odd? identity   cons 1 '())
+       (9 7 5 3 1)
+       >
+
+       > (iteratep-until  inc  (partial < 10)  even? identity   cons 1 '())
+       (8 6 4 2)
+
+
+       > (iteratep-until  inc  (partial < 10)  even?  (partial * 3)   cons 1 '())
+         (24 18 12 6)
+
+        > (iteratep-until  inc  (partial < 10)  even?  (constantly 1)  cons 1 '())
+          (1 1 1 1)
+
+
+       It will calculate:  (* 18 16 14 12 10 8 6 4 2)
+       > (iteratep-until  inc  (partial < 10)  pred-true  (partial * 2)   * 1 1)
+         185794560
+
+        It will sum: 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1
+
+        > (iteratep-until  inc  (partial < 10)  pred-true  identity   + 1 0)
+          45
+        >
+
+
+       "
+
+        (letc
+
+         [ out   (f_iter x0)]
+
+         (if (f_cond out)
+             acc
+             (if (not (f_sel out))
+                 (iteratep-until f_iter f_cond f_sel f_proj f_acc out (f_acc (f_proj x0) acc))
+                 (iteratep-until f_iter f_cond f_sel f_proj f_acc out acc)
+                 )
+             )))
+
+
+;; (iteratep-until  inc  (partial < 10)  odd?  identity  *  1  1)
+;; (iteratep-until  inc  (partial < 10)  pred-true  identity   cons 1 '())
 
 
 (comment
@@ -720,6 +618,8 @@ Example:
   "
   (cond
 
+   ((equal? s #t) "#t")
+   ((equal? s #f) "#f")
    ((and (list? s) (null? s))   "()")
    ((string? s) (string-append "\"" s "\""))
    ((number? s) (number->string s))
@@ -732,7 +632,9 @@ Example:
 
    ((vector? s) (string-append "["
                                (string/join " "
-                                (map str (vector->list s))) "]"))
+                                            (map str (vector->list s))) "]"))
+
+
 
    ))
 
@@ -764,82 +666,3 @@ Example:
        ,result ;;; Return value
 
        )))
-
-
- ;; Enf of (match <expression> . <patterns>)
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(define (run-op operation)
-  (match operation
-         (()       0)
-         ((a b)    (+ a b))
-         ((a b c)  (* a b c))
-         ))
-
-
-(define (list-match? s1 s2)
-  (and
-   (and (list? s1)  (list? s2))
-   (= (length s1) (length s2))
-   ))
-
-(define (map2 f xs)
-  (match xs
-         ((hd . tl)    (cons (f hd ) (map2 f tl)))
-         (()          '())
-   ))
-
-(map2 inc (list 1 2 3 4 5 ))
-
-(define (run op a b)
-  (match op
-         (add  (+ a b))
-         (sub  (- a b))
-         (mul  (* a b))
-         (div  (/ a b))
-
-         (add: (+ a b))
-         (sub: (- a b))
-
-         ))
-
-(run  add: 10 20)
-(run 'mul  20 30)
-
-
-
-
-(define-macro (test x)
-  `(quote ,x)
-  )
-
-(comment
-
- "Dream Pattern Matching "
-
- (defn map2 (f xs)
-   (match xs
-          (hd . tl)  '(cons (f hd) (map2 f tl))
-          ()         '()
-          ))
-
- (match form
-
-        ()          (error "Cannot be empty")
-        (x: x y:)   (list x y)
-        (add: x y)  (+ x y)
-        (a b c d)   (+ a b c d)
-
-        ("--command1" x1 x2 x3)  dosemething
-
-        ("--command2" . args)
-
-        "--command3"
-
-        )
-
- )

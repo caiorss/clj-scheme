@@ -1,94 +1,22 @@
-
-
 ;;;; Create the function map-index
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
-
-
-(define-macro (match x . patterns)
-  (let*
-      (
-       (sym (gensym))
-
-       (list-match? (lambda  (s1 s2)
-                             (and
-                              (and (list? s1)  (list? s2))
-                              (= (length s1) (length s2))
-                              )))
-
-
-
-       (f_match    (lambda (s)
-
-                     (let ((pattern (car s))
-                           (rule    (cadr s))
-                           )
-
-                       (println (list "pattern = " (str pattern)))
-                       (println (list "rule = "    (str rule)))
-
-                       (cond
-
-                        ((null? pattern) `((null? ,sym) ,rule))
-
-                        ((pair? pattern) `((pair? ,sym)
-                                           (let
-                                               ((,(car pattern) (car ,sym))
-                                                (,(cdr pattern) (cdr ,sym))
-                                                )
-                                             ,rule
-                                             )
-                                           ))
-
-                        ((symbol? pattern) `((equal? (quote ,pattern) ,sym) ,rule))
-
-                        ((keyword? pattern) `((equal? ,pattern ,sym) ,rule))
-
-
-                        ((list? pattern) (begin
-                                          (println "list ")
-                                         `((list-match? ,pattern ,sym)
-
-                                           (let
-                                               ,(map-index
-                                                 (lambda (idx pt sy)
-
-                                                   `(,(list-ref
-                                                       (quote ,pt) ,idx)
-                                                     ,(list-ref ,sy ,idx)))
-                                                 pattern
-                                                 sym
-                                                 )
-
-                                             ,rule
-
-                                             )))
-                         )
-
-
-                        ))))
-       ) ;; End of let*
-
-
-    `(let ((,sym ,x))
-       (cond
-         ,@(map f_match patterns)
-
-         ))
-
-    ))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(define (list-match? s1 s2)
+  (and
+   (and (list? s1)  (list? s2))
+   (= (length s1) (length s2))
+   ))
 
 ;;(define (matcht x . patterns)
 (define-macro (match x . patterns)
   (let*
       (
        (sym (gensym))
+
+       (predicate?     (lambda (s) (and (list? s)
+                                        (not (null? s))
+                                        (equal? '? (car s)))))
 
        (list-match? (lambda  (s1 s2)
                              (and
@@ -129,10 +57,20 @@
                            (rule    (cadr s))
                            )
 
-                       (println (list "pattern = " (str pattern)))
-                       (println (list "rule = "    (str rule)))
+                       ;;(println (list "pattern = " (str pattern)))
+                      ;; (println (list "rule = "    (str rule)))
 
                        (cond
+
+                        ((equal? #t pattern) `((equla? #t ,sym) ,rule))
+                        ((equal? #f pattern) `((equal? #f ,sym) ,rule))
+
+                        ((predicate? pattern) `((,(cadr pattern) ,sym) ,rule))
+
+                        ((or (string? pattern) (number? pattern))
+                         `((equal? ,pattern ,sym) ,rule))
+
+
 
                         ((null? pattern) `((null? ,sym) ,rule))
 
@@ -144,7 +82,7 @@
 
 
                         ((list? pattern) (begin
-                                           (println "pattern = list")
+                                           ;;(println "pattern = list")
 
                                            `((list-match? (quote ,pattern) ,sym)
 
@@ -170,8 +108,7 @@
                                            ))
 
 
-                        ))))
-       ) ;; End of let*
+                        ))))) ;; End of let*
 
     ;;($dbv map-index list '(1 2 3 4) '(a b c d) '(a: b: c: d:))
 
@@ -184,10 +121,14 @@
     )) ;;; end of matchit
 
 
-(match '(10 20)
+
+
+(match '(2 3)
        (()       0)
        ((a b)    (+ a b))
        ((a b c)  (* a b c))
+
+       ;;('sum a b c)
        )
 
 
@@ -195,25 +136,18 @@
        '(()       0)
        '((a b)    (+ a b))
        '((a b c)  (* a b c))
+
+
        )
 
 
 
 
-(let
-
-    ((g126 '(10 20))
-
-     (cond ((null? g126) 0)
-
-           ((list-match? (a b) g126)
-             (let ((a (list-ref g126 0)) (b (list-ref g126 1))) (+ a b)))
-
-            ((list-match? (a b c) g126)
-             (let ((a (list-ref g126 0))
-                   (b (list-ref g126 1))
-                   (c (list-ref g126 2)))
-               (* a b c))))))
+(match 200
+       ((? zero?)  "zero")
+       ((? odd?)   "odd")
+       ((? even?)  "even")
+       )
 
 (define (run-op operation)
   (match operation
@@ -221,3 +155,67 @@
          ((a b)    (+ a b))
          ((a b c)  (* a b c))
          ))
+
+
+
+(define (list-match? s1 s2)
+  (and
+   (and (list? s1)  (list? s2))
+   (= (length s1) (length s2))
+   ))
+
+(define (map2 f xs)
+  (match xs
+         ((hd . tl)    (cons (f hd ) (map2 f tl)))
+         (()          '())
+   ))
+
+(map2 inc (list 1 2 3 4 5 ))
+
+(define (run op a b)
+  (match op
+         (add  (+ a b))
+         (sub  (- a b))
+         (mul  (* a b))
+         (div  (/ a b))
+
+         (add: (+ a b))
+         (sub: (- a b))
+
+         ))
+
+(run  add: 10 20)
+(run 'mul  20 30)
+
+
+
+(define-macro (test x)
+  `(quote ,x)
+  )
+
+(comment
+
+ "Dream Pattern Matching "
+
+ (defn map2 (f xs)
+   (match xs
+          (hd . tl)  '(cons (f hd) (map2 f tl))
+          ()         '()
+          ))
+
+ (match form
+
+        ()          (error "Cannot be empty")
+        (x: x y:)   (list x y)
+        (add: x y)  (+ x y)
+        (a b c d)   (+ a b c d)
+
+        ("--command1" x1 x2 x3)  dosemething
+
+        ("--command2" . args)
+
+        "--command3"
+
+        )
+
+ )
