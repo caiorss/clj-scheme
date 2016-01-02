@@ -1,22 +1,8 @@
 #+TITLE:  CljScheme
 #+AUTHOR: Caio Rodrigues Soares Silva
 #+EMAIL:  caiorss.rodrigues@gmail.com
-
- - [[http://www.devx.com/opensource/Article/42778/0/page/2][Using Gambit-C Scheme to Create Small, Efficient Native Applications : Page 2]]
-
- - http://permalink.gmane.org/gmane.lisp.scheme.gambit
-
- - [[http://www.cs.brandeis.edu/~zkessin/thesis.pdf][]]
-
- - [[http://www.willdonnelly.net/blog/runtime-scheme-detection/][Runtime Scheme Detection]]
-
- - [[http://jlongster.com/Open-Sourcing-My-Gambit-Scheme-iOS-Game-from-2010][Open-Sourcing My Gambit Scheme iOS Game from 2010]]
-
- - [[http://synthcode.com/scheme/irregex/][IrRegular Expressions]]
-
- - [[https://pragmattica.wordpress.com/category/scheme/][Scheme | Pragmattica]]
-
- - http://blog.gmane.org/gmane.lisp.scheme.gambit
+#+DESCRIPTION: Gambit Scheme with Clojure Syntax, Utilities and Library Bindings.
+#+URL: http://www.gihub.com/caiorss/cljscheme
 
 
 * CljScheme
@@ -27,35 +13,45 @@
 Gambit Scheme.
 
 *Motivation*: Clojure Syntax and macros are what a modern Lisp syntax
-should be: flexible, readable and powerful. Despite the JVM be
-powerful and Clojure runs on top of it, the JVM based languages are
-not suitable to create scripts and interface native code and OS
-api. This project aims to implement a Clojure-like scheme on top of
-Gambit Scheme which has the following features: Commong Lisp Style
-macros, define-macro and a powerful FFI (Foreign Function Interface).
+should be: flexible, readable and short. Despite the JVM be powerful
+and Clojure runs on top of it, the JVM based languages are not
+suitable to create scripts and interface native code and OS api due to
+low startup time. Gambit Scheme has define-macro and an excellent
+FFI which and complies to R5RS Scheme standard what makes this Scheme
+implementation suitable to build a Clojure-like language that compiles
+to native code.
+
+This project aims to implement a Clojure-like scheme on top of Gambit
+Scheme which has the following features: Commong Lisp Style macros,
+define-macro and a powerful FFI (Foreign Function Interface).
 
 * TODO Tasks
 
  - [] Implement Vector literal using reader-macro
  - [] Implement Hash Map Literal using reader-macro
- - [] Learn How to use the FFI (Foreign Function Interface)
- - [] Implement Pattern Matching Macros
+ - [x] Learn How to use the FFI (Foreign Function Interface)
+ - [x] Implement Pattern Matching Macros
  - [] Clojure Macros
-   - [] Thread-first macro
-   - [] Thread-last macro
-   - [] Data flow macro with $
+   - [x] Thread-first macro
+   - [x] Thread-last macro
+   - [x] Data flow macro with $
  - [] Implement Clojure Abstraction
 
-* Files
+* Files:
 
-** Core.scm
+** scljcore.scm
+
+Core Library Containing many higher order functions
 
  * file:core.scm Core Definitions and Macros
 
  See:
  -
 
-*** Macros:
+** smacros.scm
+
+Contains many macros that emulates clojure syntax and features.
+
 **** Dotimes
 
 #+BEGIN_SRC scheme
@@ -156,6 +152,7 @@ Pattern Matching Macro
 
 #+END_SRC
 
+** system.scm
 ** ffi-tools.scm
 
 #+BEGIN_SRC scheme
@@ -209,212 +206,28 @@ Pattern Matching Macro
             )
 #+END_SRC
 
-* Gambit Scheme
+* Libraries
+** Libxml2
 
- Cases:
+ Wrapper to Libxml2 to libxml2 to parse XML.
 
- - [[http://www.slideshare.net/jlongster/the-scheme-language-using-it-on-the-iphone][The Scheme Language -- Using it on the iPhone]]
- - [[https://itunes.apple.com/us/app/gambit-repl/id434534076?mt=8&ls=1][Gambit REPL on the App Store]] (Mark Feeley)
- - [[https://code.google.com/p/win-control/][win-control - OLE, Internet Explorer and raw windows automation library for Gambit-C on Windows platforms. - Google Project Hosting]]
+ - [[file:libxml2][Libxml2]]
 
- - [[http://phildawes.net/blog/2007/04/21/gambit-c-namespaces/][Gambit-C namespaces]]
+*** TODO
 
- - [[http://soft.vub.ac.be/Publications/2011/vub-soft-tr-11-20.pdf][]]
+ - [] Implement function that turns the xml format into sxml format.
+ - [] Implement tests to libxml2
+ - [] Build Script
 
- - [[http://www.animal-machine.com/blog/121226_calling_Gambit_Scheme_code_from_c.md][ANIMAL-MACHINE.COM]]
+** Libcurl
 
- - [[https://news.ycombinator.com/item?id=2331693][Using Gambit-C Scheme to Create Small, Efficient Native
-   Applications | Hacker News]]
+  Gambit Scheme Wrapper to Libcurl using ffi.
 
- - http://www.iro.umontreal.ca/~gambit/doc/gambit.pdf
+ - [[file:libcurl][Lib Curl]]
 
- - [[https://github.com/euccastro/gambit-ffi-types][euccastro/gambit-ffi-types · GitHub]]
+*** TODO
 
-  - https://github.com/euccastro/gambit-SDL2/blob/master/ffi-macro.scm
+ - [] Create Build Scripts
+ - [] Create Tests
+ - [] Create Examples
 
-Threads
-
- - [[http://webmail.iro.umontreal.ca/pipermail/gambit-list/2013-April/006654.html][gambit-list FFI C struct]]
-
-
-** Infix Notation
-
-#+BEGIN_SRC scheme
-
-1>
-> (define x \1+2+3+4+5;)
-> x
-15
-> (display \expt( 2, sqrt(x+1) );)
-16>
-
-\ for (int i=0; i<10; i++) \pretty-print([i,i*i,i*i*i]);
-(0 0 0)
-(1 1 1)
-(2 4 8)
-(3 9 27)
-(4 16 64)
-(5 25 125)
-(6 36 216)
-(7 49 343)
-(8 64 512)
-(9 81 729)
->
-
-
-#+END_SRC
-** REPL
-
-#+BEGIN_SRC
-
-> ,?
-,? or ,h      : Summary of comma commands
-,q            : Terminate the process
-,qt           : Terminate the current thread
-,t            : Jump to toplevel REPL
-,d            : Jump to enclosing REPL
-,c and ,(c X) : Continue the computation with stepping off
-,s and ,(s X) : Continue the computation with stepping on (step)
-,l and ,(l X) : Continue the computation with stepping on (leap)
-,<n>          : Move to particular frame (<n> >= 0)
-,+ and ,-     : Move to next or previous frame of continuation
-,y            : Display one-line summary of current frame
-,b            : Display summary of continuation (i.e. backtrace)
-,i            : Display procedure attached to current frame
-,e or ,(e X)  : Display environment of current frame or X (a proc or cont)
-,(v X)        : Start a REPL visiting X (a procedure or continuation)
->
-
-
-#+END_SRC
-
-
-** Additional special forms and procedures
-
-** Note
-
- - http://stackoverflow.com/questions/29913654/gambit-c-scheme-cannot-load-a-windows-dll
-
-#+BEGIN_SRC
-
-I'm having troubles with dynamically loading a windows shared library with Gambit-C Scheme.
-
-(c-declare "#include <stdlib.h>")
-(c-declare "#include <Windows.h>")
-(define load-library (c-lambda () void "
-    HINSTANCE lib = LoadLibrary (\"test.dll\");
-    if (lib) printf (\"works!\");
-"))
-(load-library)
-Directory structure:
-
---test.scm
---test.dll
-GSC commands:
-
-gsc -exe test.scm
-I've tested it in pure compiled C and it loads there. Thank you.
-
-#+END_SRC
-* Projects
-
-
-Black Hole is an R5RS compatible module system for Gambit which allows
-you to easily import libraries into your code including macros, which
-previously has been tricky on Gambit. Conversely you can also export
-your own code and create your own libraries to fully modularise your
-development.
-
- - https://github.com/pereckerdal/blackhole
-
- -
-
-
-JazzScheme is a development system based on extending the Scheme
-programming language and the Gambit system. It includes a module
-system, hygienic macros, object-oriented programming, a full featured
-cross-platform application framework, a sophisticated programmable IDE
-and a build system that creates binaries that run on Mac OS X, Windows
-and L… http://www.jazzscheme.org/
-
-
-  https://github.com/jazzscheme/jazz
-
-
-LambdaNative is a cross-platform development environment written in
-Scheme, supporting Android, iOS, BlackBerry 10, OS X, Linux, Windows,
-OpenBSD, NetBSD and OpenWrt. http://www.lambdanative.org
-
-
-  https://github.com/part-cw/lambdanative
-
-
-*netguy204/gambit-game-lib*
-
- Game library that exploits Gamit-C
- http://www.50ply.com/blog/2012/08/29/spriter-scml-parser-in-scheme/
-
- https://github.com/netguy204/gambit-game-lib
-
-*win-control*
-
-OLE, Internet Explorer and raw windows automation library for Gambit-C
-on Windows platforms.
-
-  https://code.google.com/p/win-control/
-
-
-
-I used Gambit Scheme to build my iOS game Cloud Breaker. Here are the
-steps you can take to get Gambit up and running on your iPhone or
-iPad. I assume you have the latest version of Xcode installed (I have
-Xcode 5.1.1).
-
-[[http://asivitz.com/posts/running_gambit_scheme_on_ios][Running Gambit Scheme on iOS
-
-]]
-*euccastro/gambit-SDL2*
-
-SDL2 bindings for Gambit C
-
- https://github.com/euccastro/gambit-SDL2
-
-
-*gambit-ffi-types*
-
-This library provides Scheme-friendly management of C structs, unions,
-and memory allocated opaque types. For conciseness, we'll refer to all
-of these as 'structs' in this text.
-
-C structs are accessed and modified in place. Only primitives
-(integers, strings, etc.) are copied when converting from Scheme to C
-and back. So, for example, you can pass such a struct to a C function
-that modifies its argument in place, and any changes will be reflected
-when you next access the fields in that struct after the call returns.
-
-The library takes care to maintain the lifecycle of your objects in a
-schemey way: they will be kept around only as long as you have
-references to them (or to some field of them, or to some subfield of a
-field of them, etc.)
-
- https://github.com/euccastro/gambit-ffi-types
-
-
-*mbenelli/klio*
-
-A collection of scheme tools and libraries for gambit scheme.
-
-Klio is a collection of standard scheme libraries gathered from the net. These libraries has been modified and reorganized in order to improve the overall consistency and to take advantage of Gambit's specifics strongs. It particular they fit a static compilation model, in which a single executable is created. If you are looking for Gambit's library, you may find something that better fit your need on Gambit's wiki. The distinctive "features" of klio are:
-
- - it doesn't use hygienic macros, only gambit's define-macro
- - it doesn't require installation of any tool, and doesn't try to be portable between implementations.
-
-Klio includes also a web server that is simple but powerful. It's main goals are:
-
- - portability
- - reliable ad efficient implementation of HTTP 1.1
- - integraton with ssax-sxml for dynamic pages
- - good performance for small sites (few users) with heavy load (pages refreshed periodically)
-
-
- [[https://github.com/mbenelli/klio][mbenelli/klio · GitHub]]
