@@ -182,6 +182,16 @@
    ))
 
 
+
+(defn find (pred xs)
+  (match xs
+         (()    nil)
+         ((hd . tl) (if (pred hd)
+                        hd
+                        (find pred tl)
+                        ))))
+
+
 (define (__filter f xs acc)
   (if (null? xs)
       (reverse acc)
@@ -210,6 +220,15 @@
       (cons
        (list (car plist) (cadr plist))
        (plist->assoc (cddr plist)))))
+
+(define (alist-get alist key)
+  (if (nil? alist)
+      nil
+      (bind-nil cadr (assoc key alist))
+      ))
+
+(define (alist-kv? alist key val)
+  (equal? (alist-get alist key) val))
 
 ;;
 ;; Oly returns true if all arguments are true
