@@ -1,200 +1,4 @@
 
-(define-macro (comment .  sexp)
-  `(values)
-  )
-
-
-(define-macro (dotimes var value body)
-  `(letrec
-       ((loop
-         (lambda (,var)
-           (if  (< ,var ,value)
-                (begin
-                  ,body
-                  (loop (+ ,var 1))))
-           )))
-     (loop 0)
-     ))
-
-
-(define-macro (dolist var alist body)
-  `(letrec
-       ((loop (lambda (xs)
-                (if (not  (null? xs))
-                    (let ((,var (car xs)))
-                      (begin
-                        ,body
-                        (loop (cdr xs))
-                        ))
-                    ))))
-     (loop ,alist)       
-       ))
-
-
-(define-macro (when cond . sexps)
-  `(if ,cond
-      (begin ,@sexps)
-      ))
-
-(define-macro (unless cond . sexps)
-  `(if (not ,cond)
-      (begin ,@sexps)
-      ))
-
-
-(define-macro (if-not
-               cond
-               f-statement
-               #!optional (t-statement nil))
-
-  (if (nil? t-statement)      
-      `(if (not ,cond)
-          ,f-statement       
-          )
-      `(if (not ,cond)
-           ,f-statement
-           ,t-statement
-           )
-      ))
-
-
-(define-macro (doto obj . s-exps)
-  (let
-      ((sym (gensym)))
-
-    `(let
-         ((,sym ,obj))
-       
-         (begin
-           ,@(map (lambda (s)
-                    `(,(car s) ,sym ,@(cdr s)))
-                  s-exps
-                  )
-           ,sym
-           ))))
-
-(define-macro (-> . s-exps)
-  "
-  Clojure thread first macro 
-
-  "
-  (let  ((sym (gensym)))
-      
-    `(let*
-
-         (
-          (,sym ,(car s-exps))
-          
-         ,@(map             
-            (lambda (s) `(,sym (,(car s) ,sym  ,@(cdr s))))
-            (cdr s-exps)
-           )
-       
-          )
-       ,sym
-       )
-    )
-  )
-
-(define-macro (->> . s-exps)
-  "
-  Clojure thread last macro 
-
-  "
-  (let  ((sym (gensym)))
-      
-    `(let*
-
-         (
-          (,sym ,(car s-exps))
-          
-         ,@(map             
-            (lambda (s) `(,sym (,(car s) ,@(cdr s) ,sym)))
-            (cdr s-exps)
-           )
-       
-          )
-       ,sym
-       )
-    )
-  )
-
-(define-macro ($-> s0 . s-exps)
-"
-Example:
-
-($-> 500                 
-     (/ $ 20)
-     (- 40 $)
-     (expt $ 2)
-     log 
-     exp 
-     sqrt
-     )
-
-Expansion:
-
-(sqrt
-   (exp 
-     (log 
-        (expt 
-           (- 40 (/ 500 20)) 2))))
-
-Expected output: 15.0 
-"
-  `(let*
-
-       (
-        ($  ,s0)
-
-        ,@(map
-           (lambda (s) (if (symbol? s)
-                           `($   (,s $))
-                           `($  ,s))
-                   )
-           s-exps
-           )
-
-        )
-     $
-     )
-  )
-
-(define-macro (bind-cons pair form . body)
-  "
-  Destructure a cons-pair   
-
-  Example:
-
-  > (bind-cons (x . y) '(9 . 8) (* x y))
-  72
-
-  > (map 
-      (lambda (pair) (bind-cons (h . t) pair (* h t)))  
-      '((1 . 2) (3 . 4) (5 . 6))
-    )
-   
-   (2 12 30)
-   > 
-
-  "  
-  (let
-      ((sym1 (car pair))
-       (sym2 (cdr pair))
-       (s    (gensym))
-       )
-
-    `(let*
-         
-         (
-          (,s     ,form)
-          (,sym1 (car ,s))
-          (,sym2 (cdr ,s))
-          )
-       
-          ,@body
-         )))
-
 
 (define nil 'nil)
 (define true #t)
@@ -204,7 +8,7 @@ Expected output: 15.0
 (define (true? x) (and x #t))
 
 (define (identity x) x)
-(define (constantly c) (lambda (x) x))
+(define (constantly c) (lambda (x) c))
 
 (define (eof? x)  (equal? x #!eof))
 (define (void? x) (equal? x #!void))
@@ -220,13 +24,17 @@ Expected output: 15.0
 
 
 (define-macro (wrap-nil sexp)
-  `(with-exception-catcher 
+  `(with-exception-catcher
    (lambda (e) nil)
    (lambda () ,sexp)
    ))
 
 (define (nil? x)
-  (or  (equal? x 'nil)
+  (or
+       (not  x)
+       (equal? x 'nil)
+       (equal? x #!void)
+       (equal? x #!eof)
        (null? x)))
 
 (define (not-nil? x)
@@ -238,16 +46,18 @@ Expected output: 15.0
       (car xs)
       ))
 
+
 (define (second xs)
-  (if (nil? xs)
+  (if (null? xs)
       nil
-      (cdar xs)
-      ))
+      (if (null? (cdr xs))
+          nil
+          (cadr xs))))
 
 (define (rest xs)
   (if (nil? xs)
       nil
-      (cdr xs)           
+      (cdr xs)
       ))
 
 (define (last xs)
@@ -277,12 +87,12 @@ Expected output: 15.0
 ;;; Convert plist to association list
 (define (plist->alist plist)
   (if (null? plist)
-      '()      
+      '()
       (cons
        (list (car plist) (cadr plist))
        (plist->alist (cddr plist)))))
 
-;;; Convert association list to plist      
+;;; Convert association list to plist
 (define (alist->plist assocl)
 (if (null? assocl)
       '()
@@ -291,24 +101,24 @@ Expected output: 15.0
            (tl (cdr assocl)))
         (cons (car hd)
            (cons (cadr hd)
-                 (alist->plist tl))))))       
+                 (alist->plist tl))))))
 
 
 (define (plist-get key params)
-  
+
   (if ( nil? params)
       nil
       (let
           ((hd1 ( car params))
            (hd2 ( cadr params))
            (tl2 ( cddr params))
-           
+
            )
         (if (equal? hd1 key)
             hd2
             (if (nil? (cdr tl2))
                 nil
-                (plist-get key tl2)            
+                (plist-get key tl2)
                 )))))
 
 
@@ -327,24 +137,18 @@ Expected output: 15.0
       (list nil (cadr var-err))
       ))
 
-(define (apnil f)
+(define (bind-nil f arg #!optional (val nil))
+  (if (nil? arg)
+      val
+      (f arg)
+   ))
+
+(define (fnil f #!optional (default nil))
   (lambda (arg)
     (if (nil? arg)
-        nil
+        default
         (f arg)
         )))
-
-(define (fnil f arg-list nil-return)
-  (let ((result
-         (if (null? arg-list)
-             nil
-             (apply f arg-list)
-             )))
-    (if (nil? result)
-        nil-return
-        result        
-        )))
-
 
 (define (inc x)
   "Increment a number, add 1"
@@ -378,6 +182,16 @@ Expected output: 15.0
    ))
 
 
+
+(defn find (pred xs)
+  (match xs
+         (()    nil)
+         ((hd . tl) (if (pred hd)
+                        hd
+                        (find pred tl)
+                        ))))
+
+
 (define (__filter f xs acc)
   (if (null? xs)
       (reverse acc)
@@ -402,13 +216,22 @@ Expected output: 15.0
 
 (define (plist->assoc plist)
   (if (null? plist)
-      '()      
+      '()
       (cons
        (list (car plist) (cadr plist))
        (plist->assoc (cddr plist)))))
 
+(define (alist-get alist key)
+  (if (nil? alist)
+      nil
+      (bind-nil cadr (assoc key alist))
+      ))
+
+(define (alist-kv? alist key val)
+  (equal? (alist-get alist key) val))
+
 ;;
-;; Oly returns true if all arguments are true 
+;; Oly returns true if all arguments are true
 ;;
 (define (all? . args)
   (reduce (lambda (acc x) (and acc x)) args true))
@@ -423,13 +246,13 @@ Expected output: 15.0
   (apply any? (map pred xs)))
 
 ;;
-;; Invert predicate function 
+;; Invert predicate function
 ;;
 (define (compl pred)
   (lambda (x) (not (pred x))))
 
 ;;
-;; Join predicate functions 
+;; Join predicate functions
 ;;
 (define (pred-or . preds)
   (lambda (x)
@@ -471,7 +294,7 @@ Expected output: 15.0
 
 
 (define (__take-while f xs acc)
-  
+
   (if (null? xs)
       '()
       (bind-cons (hd . tl) xs
@@ -505,21 +328,21 @@ Expected output: 15.0
       (bind-cons (hd . tl) xs
                  (if (not  (f hd))
                      (__drop-while f tl (cons hd acc))
-                     (reverse acc)                     
+                     (reverse acc)
                   ))))
 
 (define (drop-while f xs)
   (__drop-while f xs '()))
 
 ;;
-;; Function Composition 
+;; Function Composition
 ;;
 (define (__compose funcs x)
   (if (null? funcs)
       x
       (__compose (cdr funcs) ((car funcs) x))))
 
-(define (fcomp . funcs)  
+(define (fcomp . funcs)
   (lambda (x) (__compose funcs x)))
 
 
@@ -544,7 +367,7 @@ Expected output: 15.0
 
 
 (define (__map-index-m f xs acc index)
-  (if (for-all null? xs)
+  (if (for-all? null? xs)
       (reverse acc)
 
       (__map-index-m
@@ -568,7 +391,7 @@ Expected output: 15.0
         (__collect-until
          pred
          func
-         (cons x acc)         
+         (cons x acc)
          )
         )))
 
@@ -598,15 +421,135 @@ Expected output: 15.0
 (define (exec-times n f)
   (__exec-times n f 0))
 
+(defn __count-until (f_iter f_cond f_sel x0 acc)
+        (letc
 
-(comment 
- 
- 
+         [out   (f_iter x0)]
+
+         (if (f_cond out)
+             acc
+             (if (f_sel out)
+                 (__count-until f_iter f_cond f_sel  out (+ 1 acc))
+                 (__count-until f_iter f_cond f_sel  out acc)
+                 ))))
+
+(defn count-until  (f_iter f_cond x0 #!optional (f_sel pred-true))
+  (__count-until f_iter f_cond f_sel x0  0))
+
+
+(defn iterate-until (f_iter f_cond x0 )
+  "
+  Example:
+
+   > (iterate-until inc (partial < 10) 0 even?)
+     (1 3 5 7 9)
+
+  > (iterate-until inc (partial < 10) 0 odd?)
+    (0 2 4 6 8)
+  >
+
+  "
+  (begin
+      (defn __iterate-until (x0 acc)
+        (letc
+
+         [ out   ( f_iter x0)]
+
+         (if ( f_cond out)
+             (if ( f_cond x0)
+                 (reverse acc)
+                 (reverse (cons x0 acc))
+                 )
+             (__iterate-until  out (cons x0 acc))
+             )))
+
+      (__iterate-until x0 '())
+    ))
+
+
+(defn iteratep-until (f_iter f_cond f_sel f_proj f_acc x0 acc)
+       "
+        General higher order loop function
+
+         Parameters:
+
+         * f_iter - Iterator function that generates the next element of the sequence.
+         * f_cond - Predicate function that when is true stop the loop and returns
+                    the accumulator
+         * f_sel  - Predicate selector, only the values that satifies f_sel are
+                    accumulated.
+
+         * f_proj  - Function to be applied to each element before be accumulated.
+
+         * x0      - Initial element of the sequence
+
+         * acc     - Initial value of the accumulator
+
+         Example:
+
+        > (iteratep-until  inc  (partial < 10)  pred-true  identity   cons 1 '())
+           (9 8 7 6 5 4 3 2 1)
+        >
+
+       > (iteratep-until  inc  (partial < 10)  pred-true  (partial * 2)   cons 1 '())
+         (18 16 14 12 10 8 6 4 2)
+
+       > (iteratep-until  inc  (partial < 10)  pred-false (partial * 2)   cons 1 '())
+       ()
+
+       > (iteratep-until  inc  (partial < 10)  odd? identity   cons 1 '())
+       (9 7 5 3 1)
+       >
+
+       > (iteratep-until  inc  (partial < 10)  even? identity   cons 1 '())
+       (8 6 4 2)
+
+
+       > (iteratep-until  inc  (partial < 10)  even?  (partial * 3)   cons 1 '())
+         (24 18 12 6)
+
+        > (iteratep-until  inc  (partial < 10)  even?  (constantly 1)  cons 1 '())
+          (1 1 1 1)
+
+
+       It will calculate:  (* 18 16 14 12 10 8 6 4 2)
+       > (iteratep-until  inc  (partial < 10)  pred-true  (partial * 2)   * 1 1)
+         185794560
+
+        It will sum: 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1
+
+        > (iteratep-until  inc  (partial < 10)  pred-true  identity   + 1 0)
+          45
+        >
+
+
+       "
+
+        (letc
+
+         [ out   (f_iter x0)]
+
+         (if (f_cond out)
+             acc
+             (if (not (f_sel out))
+                 (iteratep-until f_iter f_cond f_sel f_proj f_acc out (f_acc (f_proj x0) acc))
+                 (iteratep-until f_iter f_cond f_sel f_proj f_acc out acc)
+                 )
+             )))
+
+
+;; (iteratep-until  inc  (partial < 10)  odd?  identity  *  1  1)
+;; (iteratep-until  inc  (partial < 10)  pred-true  identity   cons 1 '())
+
+
+(comment
+
+
 "
-Example: 
-> 
+Example:
+>
 (
- (group-by-pred 
+ (group-by-pred
   (list \"pdf\"     (file/ends-with \".pdf\"))
   (list \"tar.gz\"  (file/ends-with \".tar.gz\"))
   (list \"tar.bz2\" (file/ends-with \".tar.bz2\"))
@@ -615,7 +558,7 @@ Example:
 
   (dir/list \"~/Downloads\") )
 "
-  ) ;;; End of comment 
+  ) ;;; End of comment
 
 (define  (group-by-pred . pred-list)
   (lambda (xs)
@@ -650,8 +593,8 @@ Example:
   (lambda (xs) (reduce f xs acc)))
 
 (define (t-curry f)
-  "A function of many arguments is turned into 
-   a function of one argument that takes a list 
+  "A function of many arguments is turned into
+   a function of one argument that takes a list
    of original function."
   (lambda (list xs) (apply f xs)))
 
@@ -663,7 +606,7 @@ Example:
   (let*
 
       ((n  (vector-length vec))
-       (v-new (make-vector n))       
+       (v-new (make-vector n))
        )
 
     (dotimes i n
@@ -672,52 +615,59 @@ Example:
    ))
 
 
-;; (def f 
+;; (def f
 ;;      (juxtp
 ;;       name: identity
 ;;       type: (comp file-info file-info-type)
-;;       size: (comp file-info file-info-size) 
-;;       )) 
+;;       size: (comp file-info file-info-size)
+;;       ))
 
 
 (define (str s)
   "
-  Example: 
+  Example:
 
   > (str (vector (list 1 2 3 4) (vector '+ 3 4 6) 12 \"hello world\"))
   \"[(1 2 3 4) [+ 3 4 6] 12 \\\"hello world\\\"]\"
-  > 
+  >
 
   > (vector (list 1 2 3 4) (vector '+ 3 4 6) 12 \"hello world\")
   #((1 2 3 4) #(+ 3 4 6) 12 \"hello world\")
-  >   
+  >
   "
   (cond
 
+   ((equal? s #t) "#t")
+   ((equal? s #f) "#f")
+   ((and (list? s) (null? s))   "()")
    ((string? s) (string-append "\"" s "\""))
    ((number? s) (number->string s))
    ((symbol? s) (symbol->string s))
+
+   ((keyword? s) (string-append (keyword->string s) ":"))
    ((list? s)   (string-append "(" (string/join " "
                                                 (map str s)) ")"))
    ((pair? s)   (string-append "(" (str (car s)) " . " (str (cdr s))  ")"))
 
    ((vector? s) (string-append "["
                                (string/join " "
-                                (map str (vector->list s))) "]"))
+                                            (map str (vector->list s))) "]"))
+
+
 
    ))
 
 
 (define-macro ($dbg f . args)
   "
-  Debug Injection Macro: 
+  Debug Injection Macro:
 
   > (def a 10)
   > (+ 10 40 ($dbg - 10 ($dbg a)))
   > a = 10
   > (- 10 ($dbg a)) = 0
   50
-  >   
+  >
   "
   (let
 
@@ -726,12 +676,12 @@ Example:
     `(let
          ((,result ,(if (null? args) f `(,f ,@args) )))
 
-       (display " > ")       
+       (display " > ")
        (display (str ,(if (null? args) `(quote ,f) `(quote (,f ,@args)))))
        (display " = ")
        (display (str ,result))
        (newline)
 
-       ,result ;;; Return value 
+       ,result ;;; Return value
 
        )))

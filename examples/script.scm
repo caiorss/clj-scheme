@@ -1,4 +1,4 @@
-#! /usr/bin/env gsi 
+#! /usr/bin/env gsi
 
 
 
@@ -14,7 +14,7 @@
 
 (defn bind-nil (f x #!optional (val #f))
   (if (null? x)
-      val 
+      val
       (f x)
       ))
 
@@ -22,11 +22,11 @@
      (partial string/starts-with "--"))
 
 (defn opt-get (opts)
-  
+
   (if (null? opts)
-      
+
       '()
-      
+
       (letc
        (
         hd        (car opts)
@@ -35,25 +35,25 @@
         args      (bind-nil car res '())
         rest-args (bind-nil cadr res '())
         )
-       
+
        (list (list hd args) rest-args)
        )))
 
 (defn __opt-parse (opts acc)
   (if  (null? opts)
-       
+
        (reverse acc)
-       
+
        (letc
 
         [
          params-restp   (opt-get opts)
          params         (car  params-restp)
          restp          (cadr params-restp)
-        ]   
+        ]
 
         (__opt-parse  restp
-                    (cons params acc))        
+                    (cons params acc))
         )))
 
 (defn opt-parse (opts)
@@ -68,16 +68,16 @@
  help: "Build the file "
 
  option: any, one-of
- 
- (list 
+
+ (list
   opt: "--start"
   arg: 'none
-  fun:  start-daemon 
+  fun:  start-daemon
   )
- (list 
+ (list
   opt: "--stop"
   arg: 'none
-  func: stop-daemon 
+  func: stop-daemon
   )
  (list
   "--restart"
@@ -107,7 +107,7 @@
       '()
       (bind-cons (hd . tl)
                  (if (string/starts-with "--" hd)
-                     
+
 
                      ))))
 
@@ -125,7 +125,7 @@
   (__split-when f xs '()))
 
 (define (__take-while-rest f xs acc1 acc2)
-  
+
   (if (null? xs)
       '()
       (bind-cons (hd . tl) xs
@@ -155,12 +155,12 @@
        (display (str ,result))
        (newline)
 
-       ,result ;;; Return value 
+       ,result ;;; Return value
 
        )))
 
 (define (__take-while-rest f xs acc)
-  
+
   (if (null? xs)
       '()
       (bind-cons (hd . tl) xs
@@ -176,7 +176,7 @@
 
 
 (define (__take-while f xs acc)
-  
+
   (if (null? xs)
       '()
       (bind-cons (hd . tl) xs
@@ -193,7 +193,7 @@
 (comment
 
  "Dream Pattern Matching "
- 
+
  (defn map2 (f xs)
    (match xs
           (hd . tl)  '(cons (f hd) (map2 f tl))
@@ -211,10 +211,10 @@
 
         ("--command2" . args)
 
-        "--command3"    
+        "--command3"
 
         )
- 
+
  )
 
 

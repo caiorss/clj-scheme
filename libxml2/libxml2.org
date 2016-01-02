@@ -1,0 +1,397 @@
+#+TITLE: Libxml2 Documentation
+#+AUTHOR: Caio Rodrigues Soares Silva
+#+DESCRIPTION: Libxml2 Documentation
+
+
+* Libxml2
+** Overview
+
+XML Parsers
+ - SAX Parser
+ - DOM (Domain Object Model) Parser: The entire document is read to
+   the memory
+
+
+Libxml2 supports DOM parser and SAX parser. This C library has
+bindings in many languages like: Python, Ruby, Perl, R ...
+
+
+
+XML Tree:
+ - Nodes
+   - Tags
+   - Attributes - Key/Value
+     - Attribute
+     - Value of Attribute
+   - Sibling nodes
+   - Child nodes
+
+Miscellaneous
+:
+ - [[http://www.raywenderlich.com/553/xml-tutorial-for-ios-how-to-choose-the-best-xml-parser-for-your-iphone-project][XML Tutorial for iOS: The Best XML Parser for Your iPhone Project]]
+
+
+*XML File:*
+
+
+#+BEGIN_SRC xml
+
+<tag0>
+
+<tag1  attr1="val1" attr2="val2" ...>
+
+  <child_tag1>text</child_tag1>
+  <child_tag2>text asdasdasdas</child_tag2>
+  <child_tag3>text asdasdasdas</child_tag3>
+
+</tag1>
+
+</tag0>
+
+#+END_SRC
+
+** Official Documentation
+
+ - Libxml tree.h -  [[http://www.xmlsoft.org/html/libxml-tree.html#xmlAttr][Module tree from libxml2]]
+ - [[http://www.xmlsoft.org/APIfiles.html][List of Symbols per Module for libxml2]]
+ - [[http://www.xmlsoft.org/examples/index.html][Libxml2 set of examples]]
+ - [[http://xmlsoft.org/tutorial/index.html][Libxml Tutorial]]
+ - [[http://www.xmlsoft.org/html/libxml-HTMLtree.html][Module HTMLtree from libxml2]]
+
+
+** Tutorials
+
+ - [[http://xmlsoft.org/tutorial/index.html][Libxml Tutorial]]
+ - [[ftp://ftp.ccp4.ac.uk/ccp4/6.3.0/unpacked/src/rapper/libxml2/doc/xmlreader.html][Libxml2 XmlTextReader Interface tutorial]]
+ - [[http://hamburgsteak.sandwich.net/writ/libxml2.txt][Developing XML-enabled C programs with libxml2 - A beginner's guide]]
+ - [[http://www.xmlsoft.org/examples/index.html#XPath][Libxml2 set of examples]] XPath
+ - [[http://www.xmlsoft.org/examples/index.html#Tree][Libxml2 set of examples]] Tree
+ - [[http://kailaspatil.blogspot.com.br/2011/03/libxml-tutorial.html][Kailas Patil: LibXML Tutorial]]
+ - [[http://www.developer.com/xml/article.php/3729826/Libxml2-Everything-You-Need-in-an-XML-Library.htm][Libxml2: Everything You Need in an XML Library - Developer.com]]
+ - [[http://charette.no-ip.com:81/programming/2010-01-03_LibXml2/][Programming Comments - How to get started with libxml2]]
+ - [[http://finzi.psych.upenn.edu/library/XML/html/xmlTreeParse.html][R: XML Parser]]
+ - [[http://sunsite.ualberta.ca/Documentation/Misc/libxml2-2.4.10/html/xml.html][The XML C library for Gnome]]
+
+Codes:
+
+ - [[http://www.xmlsoft.org/tutorial/apf.html][F. Code for Add Attribute Example]]
+ - [[http://xmlsoft.org/tutorial/apg.html][G. Code for Retrieving Attribute Value Example]]
+ -
+ - [[https://gist.github.com/khajavi/5690057][Example of getting attribute value of xml node by using libxml2 library.]]
+ - [[http://www.yolinux.com/TUTORIALS/GnomeLibXml2.html][Gnome Lib XML 2:]]
+ - [[http://simplestcodings.blogspot.com.br/2010/09/simple-xml-parser-in-c-using-libxml.html][Simple XML Parser in C using libxml]]
+ -
+
+References and Standards:
+
+ - [[http://www.w3.org/TR/REC-xml-names/][Namespaces in XML 1.0 (Third Edition)]]
+ - [[http://www.w3.org/TR/REC-xml/][Extensible Markup Language (XML) 1.0 (Fifth Edition)]]
+ - [[http://www.w3.org/TR/xmlbase/][XML Base (Second Edition)]]
+ - [[http://www.w3.org/TR/xpath/][XML Path Language (XPath)]]
+ - [[http://www.w3.org/TR/html401/][HTML 4.01 Specification]]
+ - [[http://www.w3.org/TR/xptr/][XML Pointer Language (XPointer)]]
+ - [[http://www.w3.org/TR/xinclude/][XML Inclusions (XInclude) Version 1.0 (Second Edition)]]
+ - [[https://www.oasis-open.org/committees/entity/spec-2001-08-06.html][XML Catalogs]]
+
+
+ - [[https://www.ietf.org/rfc/rfc2044.txt][RFC-2044 - UTF-8, a transformation format of Unicode and ISO 10646]]
+ - [[https://www.ietf.org/rfc/rfc2396.txt][RFC-2396 -  Uniform Resource Identifiers (URI): Generic Syntax ]]
+ - [[https://www.ietf.org/rfc/rfc2781.txt][RFC-2781 UTF-16, an encoding of ISO 10646]]
+
+
+* API Documentation
+** Functions
+
+*** Parsers
+
+ - xmlParseFile - Parse a xml file.
+ - xmlParseDoc  - Parse a buffer, a string in memory.
+
+*** Save File Functions
+**** xmlSaveFormatFileEnc
+*** Functions to Clean Memory
+
+#+BEGIN_SRC text
+
+
+xmlXPathFreeObject( xpathObj );
+xmlXPathFreeContext( xpathCtx );
+xmlFreeDoc( doc );
+xmlCleanupParser();
+
+#+END_SRC
+
+#+BEGIN_SRC C
+int	xmlSaveFormatFileEnc
+                    (const char * filename,
+					 xmlDocPtr cur,
+					 const char * encoding,
+					 int format)
+#+END_SRC
+
+Dump an XML document to a file or an URL.
+
+| filename: | the filename or URL to output                                                                                                                                          |
+| cur:      | the document being saved                                                                                                                                               |
+| encoding: | the name of the encoding to use or NULL.                                                                                                                               |
+| format:   | should formatting spaces be added.                                                                                                                                     |
+| Returns:  | the number of bytes written or -1 in case of error. Note that @format = 1 provide node indenting only if xmlIndentTreeOutput = 1 or xmlKeepBlanksDefault(0) was called |
+
+** Structs
+
+*** xmlDoc
+
+ From: [[http://www.xmlsoft.org/html/libxml-tree.html#xmlAttr][Module tree from libxml2]]
+
+#+BEGIN_SRC C
+
+Structure xmlDoc
+struct _xmlDoc {
+    void *	_private	: application data
+    xmlElementType	type	: XML_DOCUMENT_NODE, must be second !
+    char *	name	: name/filename/URI of the document
+    struct _xmlNode *	children	: the document tree
+    struct _xmlNode *	last	: last child link
+    struct _xmlNode *	parent	: child->parent link
+    struct _xmlNode *	next	: next sibling link
+    struct _xmlNode *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: autoreference to itself End of common p
+    int	compression	: level of zlib compression
+    int	standalone	: standalone document (no external refs)
+    struct _xmlDtd *	intSubset	: the document internal subset
+    struct _xmlDtd *	extSubset	: the document external subset
+    struct _xmlNs *	oldNs	: Global namespace, the old way
+    const xmlChar *	version	: the XML version string
+    const xmlChar *	encoding	: external initial encoding, if any
+    void *	ids	: Hash table for ID attributes if any
+    void *	refs	: Hash table for IDREFs attributes if any
+    const xmlChar *	URL	: The URI for that document
+    int	charset	: encoding of the in-memory content actua
+    struct _xmlDict *	dict	: dict used to allocate names or NULL
+    void *	psvi	: for type/PSVI informations
+    int	parseFlags	: set of xmlParserOption used to parse th
+    int	properties	: set of xmlDocProperties for this docume
+}
+
+#+END_SRC
+
+*** xmlAttr
+
+#+BEGIN_SRC C
+
+Structure xmlAttr
+struct _xmlAttr {
+    void *	_private	: application data
+    xmlElementType	type	: XML_ATTRIBUTE_NODE, must be second !
+    const xmlChar *	name	: the name of the property
+    struct _xmlNode *	children	: the value of the property
+    struct _xmlNode *	last	: NULL
+    struct _xmlNode *	parent	: child->parent link
+    struct _xmlAttr *	next	: next sibling link
+    struct _xmlAttr *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: the containing document
+    xmlNs *	ns	: pointer to the associated namespace
+    xmlAttributeType	atype	: the attribute type if validating
+    void *	psvi	: for type/PSVI informations
+}
+
+#+END_SRC
+
+*** xmlNode
+
+#+BEGIN_SRC C
+
+struct _xmlNode {
+    void *	_private	: application data
+    xmlElementType	type	: type number, must be second !
+    const xmlChar *	name	: the name of the node, or the entity
+    struct _xmlNode *	children	: parent->childs link
+    struct _xmlNode *	last	: last child link
+    struct _xmlNode *	parent	: child->parent link
+    struct _xmlNode *	next	: next sibling link
+    struct _xmlNode *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: the containing document End of common p
+    xmlNs *	ns	: pointer to the associated namespace
+    xmlChar *	content	: the content
+    struct _xmlAttr *	properties	: properties list
+    xmlNs *	nsDef	: namespace definitions on this node
+    void *	psvi	: for type/PSVI informations
+    unsigned short	line	: line number
+    unsigned short	extra	: extra data for XPath/XSLT
+}
+
+#+END_SRC
+
+*** xmlAttribute
+
+#+BEGIN_SRC C
+
+Structure xmlAttribute
+struct _xmlAttribute {
+    void *	_private	: application data
+    xmlElementType	type	: XML_ATTRIBUTE_DECL, must be second !
+    const xmlChar *	name	: Attribute name
+    struct _xmlNode *	children	: NULL
+    struct _xmlNode *	last	: NULL
+    struct _xmlDtd *	parent	: -> DTD
+    struct _xmlNode *	next	: next sibling link
+    struct _xmlNode *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: the containing document
+    struct _xmlAttribute *	nexth	: next in hash table
+    xmlAttributeType	atype	: The attribute type
+    xmlAttributeDefault	def	: the default
+    const xmlChar *	defaultValue	: or the default value
+    xmlEnumerationPtr	tree	: or the enumeration tree if any
+    const xmlChar *	prefix	: the namespace prefix if any
+    const xmlChar *	elem	: Element holding the attribute
+}
+
+#+END_SRC
+
+*** xmlElement
+
+#+BEGIN_SRC text
+
+struct _xmlElement {
+    void *	_private	: application data
+    xmlElementType	type	: XML_ELEMENT_DECL, must be second !
+    const xmlChar *	name	: Element name
+    struct _xmlNode *	children	: NULL
+    struct _xmlNode *	last	: NULL
+    struct _xmlDtd *	parent	: -> DTD
+    struct _xmlNode *	next	: next sibling link
+    struct _xmlNode *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: the containing document
+    xmlElementTypeVal	etype	: The type
+    xmlElementContentPtr	content	: the allowed element content
+    xmlAttributePtr	attributes	: List of the declared attributes
+    const xmlChar *	prefix	: the namespace prefix if any
+    xmlRegexpPtr	contModel	: the validating regexp
+    void *	contModel
+}
+
+#+END_SRC
+
+
+*** xmlElementContent
+
+#+BEGIN_SRC text
+
+struct _xmlElementContent {
+    xmlElementContentType	type	: PCDATA, ELEMENT, SEQ or OR
+    xmlElementContentOccur	ocur	: ONCE, OPT, MULT or PLUS
+    const xmlChar *	name	: Element name
+    struct _xmlElementContent *	c1	: first child
+    struct _xmlElementContent *	c2	: second child
+    struct _xmlElementContent *	parent	: parent
+    const xmlChar *	prefix	: Namespace prefix
+}
+
+#+END_SRC
+
+** Enums
+
+*** xmlElementType
+
+#+BEGIN_SRC C
+
+Enum xmlElementType {
+    XML_ELEMENT_NODE = 1
+    XML_ATTRIBUTE_NODE = 2
+    XML_TEXT_NODE = 3
+    XML_CDATA_SECTION_NODE = 4
+    XML_ENTITY_REF_NODE = 5
+    XML_ENTITY_NODE = 6
+    XML_PI_NODE = 7
+    XML_COMMENT_NODE = 8
+    XML_DOCUMENT_NODE = 9
+    XML_DOCUMENT_TYPE_NODE = 10
+    XML_DOCUMENT_FRAG_NODE = 11
+    XML_NOTATION_NODE = 12
+    XML_HTML_DOCUMENT_NODE = 13
+    XML_DTD_NODE = 14
+    XML_ELEMENT_DECL = 15
+    XML_ATTRIBUTE_DECL = 16
+    XML_ENTITY_DECL = 17
+    XML_NAMESPACE_DECL = 18
+    XML_XINCLUDE_START = 19
+    XML_XINCLUDE_END = 20
+    XML_DOCB_DOCUMENT_NODE = 21
+}
+
+#+END_SRC
+
+*** xmlElementTypeVal
+
+#+BEGIN_SRC C
+
+Enum xmlElementTypeVal {
+    XML_ELEMENT_TYPE_UNDEFINED = 0
+    XML_ELEMENT_TYPE_EMPTY = 1
+    XML_ELEMENT_TYPE_ANY = 2
+    XML_ELEMENT_TYPE_MIXED = 3
+    XML_ELEMENT_TYPE_ELEMENT = 4
+}
+
+#+END_SRC
+
+*** xmlAttributeType
+
+#+BEGIN_SRC C
+
+Enum xmlAttributeType {
+    XML_ATTRIBUTE_CDATA = 1
+    XML_ATTRIBUTE_ID = 2
+    XML_ATTRIBUTE_IDREF = 3
+    XML_ATTRIBUTE_IDREFS = 4
+    XML_ATTRIBUTE_ENTITY = 5
+    XML_ATTRIBUTE_ENTITIES = 6
+    XML_ATTRIBUTE_NMTOKEN = 7
+    XML_ATTRIBUTE_NMTOKENS = 8
+    XML_ATTRIBUTE_ENUMERATION = 9
+    XML_ATTRIBUTE_NOTATION = 10
+}
+
+#+END_SRC
+
+*** xmlEntity
+
+#+BEGIN_SRC C
+
+struct _xmlEntity {
+    void *	_private	: application data
+    xmlElementType	type	: XML_ENTITY_DECL, must be second !
+    const xmlChar *	name	: Entity name
+    struct _xmlNode *	children	: First child link
+    struct _xmlNode *	last	: Last child link
+    struct _xmlDtd *	parent	: -> DTD
+    struct _xmlNode *	next	: next sibling link
+    struct _xmlNode *	prev	: previous sibling link
+    struct _xmlDoc *	doc	: the containing document
+    xmlChar *	orig	: content without ref substitution
+    xmlChar *	content	: content or ndata if unparsed
+    int	length	: the content length
+    xmlEntityType	etype	: The entity type
+    const xmlChar *	ExternalID	: External identifier for PUBLIC
+    const xmlChar *	SystemID	: URI for a SYSTEM or PUBLIC Entity
+    struct _xmlEntity *	nexte	: unused
+    const xmlChar *	URI	: the full URI as computed
+    int	owner	: does the entity own the childrens
+    int	checked	: was the entity content checked this is
+}
+
+#+END_SRC
+*** xmlDocProperties
+
+#+BEGIN_SRC text
+Enum xmlDocProperties {
+    XML_DOC_WELLFORMED = 1 : document is XML well formed
+    XML_DOC_NSVALID = 2 : document is Namespace valid
+    XML_DOC_OLD10 = 4 : parsed with old XML-1.0 parser
+    XML_DOC_DTDVALID = 8 : DTD validation was successful
+    XML_DOC_XINCLUDE = 16 : XInclude substitution was done
+    XML_DOC_USERBUILT = 32 : Document was built using the API and not by parsing an instance
+    XML_DOC_INTERNAL = 64 : built for internal processing
+    XML_DOC_HTML = 128 : parsed or built HTML document
+}
+#+END_SRC

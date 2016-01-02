@@ -1,9 +1,8 @@
-
 (define-macro (apply-macros macros exps)
   `(begin
 
      ,@(apply append
-            
+
               (map
                (lambda (e)
                  (map (lambda (m) `(,m ,e)) macros ))
@@ -13,15 +12,20 @@
 (define-macro (c-include header)
   `(c-declare ,(string-append "#include " header)))
 
-(define-macro (def-Cfunc name c-name params return)
+(define-macro (defc-func name c-name params return)
   `(define ,name
      (c-lambda ,params ,return ,c-name)))
 
-(define-macro (def-Cfunc-code name params return code)
+(define-macro (defc-f name params return)
+  `(define ,name
+     (c-lambda ,params ,return ,(symbol->string name))))
+
+
+(define-macro (defc-func-code name params return code)
   `(define ,name
      (c-lambda ,params ,return ,code)))
 
-(define-macro (def-Cfunc-cast name from-type to-type)
+(define-macro (defc-func-cast name from-type to-type)
   `(define ,name
      (c-lambda
       (,from-type)
@@ -31,7 +35,7 @@
 
 
 (define-macro (def-void-ptr-cast name c-type #!optional (c-type-string #f))
-  `(def-Cfunc-code ,name
+  `(defc-func-code ,name
                  ((pointer void))
                  (pointer ,c-type)
                  ,(string-append
@@ -43,14 +47,14 @@
 
 
 (define-macro (def-ptr-setter name type)
-  `(def-Cfunc-code ,name
+  `(defc-func-code ,name
                   ((pointer ,type #f) ,type)
                   void
                   "* ___arg1 = ___arg2 ;"
                   ))
 
 (define-macro (def-ptr-getter name type)
-  `(def-Cfunc-code ,name
+  `(defc-func-code ,name
                  ((pointer ,type #f))
                  ,type
                  "___result = * ___arg1 ;"
@@ -68,9 +72,13 @@
                          ) " );"
                            ))))
 
+(define-macro (def-enum . enums)
+  `(begin
+     ,@(map-index (lambda (idx e) `(define ,e ,idx)) enums)
+     ))
 
 
-;; Null pointer 
+;; Null pointer
 ;;
 (define NULL #f)
 
@@ -93,11 +101,13 @@
 
 
 (def-ptr-getter ptr-int-get int)
+(def-ptr-getter ptr-char-get char)
 (def-ptr-getter ptr-double-get double)
 (def-ptr-getter ptr-float-get float)
 (def-ptr-getter ptr-time_t-get time_t)
 
 (def-ptr-setter ptr-int-set int)
+(def-ptr-setter ptr-char-set char)
 (def-ptr-setter ptr-double-set double)
 (def-ptr-setter ptr-float-set  float)
 (def-ptr-setter ptr-time_t-set time_t)
@@ -144,7 +154,7 @@
          (,out (begin ,@body))
          )
       (free ,var)
-      ,out      
+      ,out
       )))
 
 
@@ -155,11 +165,11 @@
                  (string-append
                   "carray-"
                   (symbol->string type)
-                  "-ref"                  
+                  "-ref"
                   )))
        )
 
-    `(define ,name 
+    `(define ,name
       (c-lambda
        ((pointer ,type #f) int)
        ,type
@@ -174,11 +184,11 @@
                  (string-append
                   "carray-"
                   (symbol->string type)
-                  "-set!"                  
+                  "-set!"
                   )))
        )
 
-    `(define ,name 
+    `(define ,name
       (c-lambda
        ((pointer ,type #f) int ,type)
        ,type
@@ -195,9 +205,32 @@
              (* len
                 (or typesize (sizeof type)))))))
 
+
+(define-macro (with-cstring ptr str body)
+  `(let*
+       (
+        (n (string-length ,str))
+        (,ptr (ptr-void->char  (malloc n)))
+        (chars (string->list ,str))
+        )
+
+     (let*
+         ((,ptr ,ptr)
+          (out ,body))
+
+       (dotimes i n
+                (carray-char-set! ,ptr  ($dbg i) (list-ref chars i)))
+
+       (carray-char-set! ,ptr n #\nul)
+
+       (free ,ptr)
+       out
+
+       )))
+
 (apply-macros
  (make-carray-type-getter
-  make-carray-type-getter
+  make-carray-type-setter
   )
  (
   int
@@ -209,7 +242,7 @@
   ))
 
 
-(define-macro (def-Cstruct-field struct field return-type)
+(define-macro (c-struct-field struct field return-type)
   (let*
       (
        (struct-str ( symbol->string struct))
@@ -217,20 +250,20 @@
 
        (accessor   ( string->symbol
                    (string-append
-                    struct-str "->"  field-str)))       
+                    struct-str "->"  field-str)))
        )
-    
-    `(def-Cfunc-code ,accessor
+
+    `(defc-func-code ,accessor
                       ((pointer  (struct ,struct-str)))
                       ,return-type
                       ,(string-append  "___result = ___arg1->" field-str " ;")
                       )))
 
 
-(define-macro (def-Cstruct-field-setter
+(define-macro (c-struct-field-setter
                struct
                field
-               type 
+               type
                )
   (let* (
          (struct-name (symbol->string struct))
@@ -244,8 +277,8 @@
                          "!"
                          )))
          )
-      
-    `(def-Cfunc-code ,setter
+
+    `(defc-func-code ,setter
       ((pointer (struct ,struct-name)) ,type)
        void
        ,(string-append
@@ -254,8 +287,8 @@
 
 
 
-(define-macro (def-Cstruct struct . field-return-values)
-    
+(define-macro (c-struct struct . field-return-values)
+
   (let*
       (
        (make-accessor-name (lambda (struct field)
@@ -264,25 +297,25 @@
                                (symbol->string  struct)
                                "->"
                                (symbol->string field)))))
-       
+
        (struct-str    (symbol->string struct))
 
        (field-names   (map car field-return-values))
-       
+
        (destructor-name     (string->symbol
                              (string-append
                               struct-str
                               "-fields"
                               )))
-       
+
        (destructor-tag-names     (string->symbol
                                   (string-append
                                    struct-str
                                    "-fields-tags"
                                    )))
 
-       
-       
+
+
        (field-accessors  (map
                           (lambda (c)
                             (make-accessor-name struct (car c)))
@@ -291,15 +324,15 @@
 
    `(begin
       ,@(map
-         (lambda (c) `(def-Cstruct-field ,struct ,(car c) ,(cadr c)))
+         (lambda (c) `(c-struct-field ,struct ,(car c) ,(cadr c)))
          field-return-values
          )
 
       (begin
          ,@(map
-            (lambda (c) `(def-Cstruct-field-setter
+            (lambda (c) `(c-struct-field-setter
                            ,struct ,(car c) ,(cadr c)))
-            field-return-values           
+            field-return-values
             ))
 
       (define (,destructor-name st)
@@ -313,7 +346,7 @@
 
                   (lambda (f tag)
                     `(list (quote ,tag) (,f st)))
-                  
+
                   field-accessors
                   field-names
                   )))
