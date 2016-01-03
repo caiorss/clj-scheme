@@ -441,3 +441,106 @@ nil
 
 
 #+END_SRC
+
+** Example3: Extracting Information from a Java Pom file. 
+
+ [[file:tests/incanter-1.5.6.pom]]
+
+#+BEGIN_SRC scheme 
+
+> (def tree (xml/file->tree "tests/incanter-1.5.6.pom"))
+
+> (xml/tree->path tree '[next (tag= "modelVersion") val] )
+"4.0.0"
+> 
+
+> (xml/tree->path tree '[next (tag= "groupId") val] )
+
+> (xml/tree->path tree '[next (tag= "groupId") val] )
+"incanter"
+> 
+
+> (xml/tree->path tree '[next (tag= "artifactId") val] )
+"incanter"
+> 
+
+> (xml/tree->path tree '[next (tag= "version") val] )
+"1.5.6"
+> 
+
+
+> (xml/tree->path tree '[next (tag= "url") val] )
+"http://incanter.org/"
+> 
+
+;;;; Extracting Dependencies 
+
+> (xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "groupId") (map val)]  )
+("incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "incanter"
+ "org.clojure"
+ "org.clojure"
+ "clojure-complete")
+> 
+
+(xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "artifactId") (map val)]  )
+("incanter-core"
+ "incanter-io"
+ "incanter-charts"
+ "incanter-mongodb"
+ "incanter-pdf"
+ "incanter-svg"
+ "incanter-latex"
+ "incanter-excel"
+ "incanter-sql"
+ "incanter-zoo"
+ "clojure"
+ "tools.nrepl"
+ "clojure-complete")
+> 
+
+(xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "version") (map val)] )
+("1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.6"
+ "1.5.1"
+ "0.2.6"
+ "0.2.3")
+> 
+
+> (zip 
+     (xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "groupId") (map val)]  )
+     (xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "artifactId") (map val)]  )
+     (xml/tree->path tree '[next (tag= "dependencies") next (map next)  (map tag= "version") (map val)] ))
+(("incanter" "incanter-core" "1.5.6")
+ ("incanter" "incanter-io" "1.5.6")
+ ("incanter" "incanter-charts" "1.5.6")
+ ("incanter" "incanter-mongodb" "1.5.6")
+ ("incanter" "incanter-pdf" "1.5.6")
+ ("incanter" "incanter-svg" "1.5.6")
+ ("incanter" "incanter-latex" "1.5.6")
+ ("incanter" "incanter-excel" "1.5.6")
+ ("incanter" "incanter-sql" "1.5.6")
+ ("incanter" "incanter-zoo" "1.5.6")
+ ("org.clojure" "clojure" "1.5.1")
+ ("org.clojure" "tools.nrepl" "0.2.6")
+ ("clojure-complete" "clojure-complete" "0.2.3"))
+> 
+
+ 
+#+END_SRC

@@ -309,6 +309,11 @@
    ))
 
 
+(defn xclip ()
+  "Paste from clipboard in  Linux/Unix"
+  (read-process
+   "xclip"  "-o"  "-selection" "clipboard"))
+
 
 ;; (defn next-arg (arglist0
 ;;   (bind-cons (hd . tl) arglist
@@ -348,3 +353,68 @@
   "ruby"
   "/home/tux/PycharmProjects/clojure/tools/maven.rb"
   "-run-repl"))
+
+
+
+
+
+;; (defn flat [list . xs] (reduce append xs '()))
+
+(defn string/quote [s]
+  (string-append "\"" s  "\""))
+
+(defn gsc-build ()
+  "Execute the buiild script in current directory 
+   namely: \"build.ss\"
+  
+  "
+  (do
+      (shell-command "gsi \"build.ss\"")
+      (println "Compiled Ok.")
+    ))
+
+
+(defn gsc-compile (filename . plist)
+  "
+  Compile a file 
+
+  "
+  (letc
+   [
+    params      (plist->alist plist)
+                
+    prelude     (alist-get params prelude:)
+    ld-options  (alist-get params ld-options:)      
+    output      (alist-get params output:)
+    ]
+
+   (apply  run-process
+           (reject nil?
+            `("gsc"
+              
+              ,@(if (not-nil? output)     (list "-o" output) '(nil))
+              ,@(if (not-nil? prelude)    (list "-prelude"  prelude) '(nil))
+              ,@(if (not-nil? ld-options) (list "-ld-options"  ld-options) '(nil))
+
+              ,filename           
+              )))))
+
+(reject nil?
+ `("gsc"
+   
+   ,@(if #f     '("-o" output))
+   ,@(if #t    '( "-prelude"  prelude)    '(nil))
+   ,@(if #f '( "-ld-options"  ld-options) '(nil))
+
+   ))
+
+
+(defn symbol/append (s . syms)
+  (string->symbol
+   (apply  string-append (symbol->string s)
+           (map symbol->string syms)  )))
+
+
+
+
+

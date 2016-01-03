@@ -23,6 +23,7 @@
   (newline))
 
 
+
 (define-macro (wrap-nil sexp)
   `(with-exception-catcher
    (lambda (e) nil)
@@ -177,7 +178,7 @@
 
 (define (reduce f xs #!optional (acc nil))
   (if (nil? acc)
-      (__reduce f (cdr xs) (car xs))
+       (__reduce f (cdr xs) (car xs))
       (__reduce f xs acc)
    ))
 
@@ -205,6 +206,11 @@
 
 (define (filter f xs)
   (__filter f xs '()))
+
+(define (reject f xs)
+  (filter
+   (lambda (x) (not (f x)))
+   xs))
 
 
 (define (zipv . xss)

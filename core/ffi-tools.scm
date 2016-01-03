@@ -12,9 +12,112 @@
 (define-macro (c-include header)
   `(c-declare ,(string-append "#include " header)))
 
+(comment
+ (define-macro (defc-const var type . const)
+    "
+  Example: 
+
+  
+
+  "
+    (let*
+        (
+
+         (const  (if (not (null? const))
+                     (symbol->string (car const))
+                     (symbol->string var)))
+         
+         (str    (string-append "___result = " const ";"))
+         
+         )
+
+      `(define ,var ((c-lambda () ,type ,str))))))
+
+
+(define-macro (defc-enum-prefix prefix . consts)
+
+ "
+Example of output:
+
+> (defc-enum-prefix 'address-family
+  'AF_UNIX
+  'AF_INET
+  'AF_INET6  
+  )
+(begin
+  (def address-family/AF_UNIX ((c-lambda () int \"___result = AF_UNIX ;\")))
+  (def address-family/AF_INET ((c-lambda () int \"___result = AF_INET ;\")))
+  (def address-family/AF_INET6 ((c-lambda () int \"___result = AF_INET6 ;\"))))
+> 
+
+"
+  (letc
+
+   [
+    pref    (symbol->string prefix)
+
+    syms    (map
+               (fn [s]  (string->symbol
+                        (string-append  pref "/"  (symbol->string s))))
+
+               consts
+               )
+
+    ]
+
+   `(begin
+
+      ,@(map
+         (fn (sym const)
+
+             `(def ,sym
+                   ((c-lambda () int
+                    ,(string-append "___result = "
+                     (symbol->string const) " ;")))
+                   ))
+         syms
+         consts
+         ))
+   ))
+
+
+  (comment
+   (define (defc-enum- prefix . consts)
+
+      (letc
+
+       [
+        pref    (symbol->string prefix)
+
+                syms    (map
+                         (fn [s]  (string->symbol
+                                   (string-append  pref "/"  (symbol->string s))))
+
+                         consts
+                         )
+
+                ]
+
+       `(begin
+
+          ,@(map
+             (fn (sym const)
+
+                 `(def ,sym
+                       ((c-lambda () int
+                                  ,(string-append "___result = "
+                                                  (symbol->string const) " ;")))
+                       ))
+             syms
+             consts
+             ))
+       )))
+
+
 (define-macro (defc-func name c-name params return)
   `(define ,name
      (c-lambda ,params ,return ,c-name)))
+
 
 (define-macro (defc-f name params return)
   `(define ,name
